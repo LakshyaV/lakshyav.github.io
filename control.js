@@ -184,8 +184,8 @@
     // the camera frame, so mapping it 1:1 to the screen made the cursor barely
     // move. GAIN amplifies movement around centre so a small, comfortable hand
     // motion reaches every edge. This was the "cursor doesn't move" bug.
-    GAIN: 2.6,
-    SMOOTH: 0.45, // cursor EMA
+    GAIN: 2.1,
+    SMOOTH: 0.5, // cursor EMA
     // Pinch measured as thumb-tip→index-tip distance over the index finger's
     // own length (MCP 5 → tip 8): scale- and distance-invariant, unlike the
     // old wrist-based metric which was unreliable at different hand distances.
@@ -193,8 +193,8 @@
     PINCH_OFF: 0.72, // release above this (hysteresis)
     DRAG_THRESH_PX: 26, // move past this during a pinch → drag, not tap
     TAP_MAX_MS: 400,
-    SCROLL_GAIN: 1.15,
-    SCROLL_DEADZONE: 0.4,
+    SCROLL_GAIN: 3.4, // scroll speed while pinch-dragging
+    SCROLL_DEADZONE: 0.3,
     CLICK_DEBOUNCE_MS: 400,
   };
 
@@ -277,7 +277,7 @@
       } catch (_) {}
     });
 
-    setStatus("move your hand · pinch to click, pinch-drag to scroll", true);
+    setStatus("move your hand · pinch to click · pinch-drag to scroll · esc to exit", true);
 
     var rafId = 0;
     var lastVideoTime = -1;
@@ -285,7 +285,6 @@
     var cx = window.innerWidth * 0.5,
       cy = window.innerHeight * 0.5,
       haveCursor = false;
-    moveCursor(cx, cy, "idle"); // show the cursor right away
     var pinching = false,
       pinchStartX = 0,
       pinchStartY = 0,
@@ -295,9 +294,9 @@
       lastScrollY = 0,
       lastClickT = 0;
 
-    // Draw the skeleton at true on-screen size, translated so the index
-    // fingertip (8) sits exactly under the amplified cursor. So the hand keeps
-    // a natural shape but travels the whole screen with the cursor.
+    // The hand IS the cursor: the skeleton is drawn at true size translated so
+    // the index fingertip sits exactly at the pointer, and that fingertip is
+    // rendered as a glowing ring — the cursor itself, not a separate dot.
     function drawSkeleton(lms, W, H) {
       var anchor = gRawScreen(lms[8], W, H);
       function place(lm) {
@@ -305,8 +304,8 @@
         return { x: cx + (r.x - anchor.x), y: cy + (r.y - anchor.y) };
       }
       var i, p, s, e;
-      octx.lineWidth = 4;
-      octx.strokeStyle = "rgba(120,120,120,0.55)";
+      octx.lineWidth = 3.5;
+      octx.strokeStyle = "rgba(140,140,140,0.4)"; // faint bones
       octx.lineCap = "round";
       for (i = 0; i < HAND_CONNECTIONS.length; i++) {
         s = place(lms[HAND_CONNECTIONS[i][0]]);
@@ -317,13 +316,24 @@
         octx.stroke();
       }
       for (i = 0; i < lms.length; i++) {
+        if (i === 8) continue; // fingertip drawn as the cursor below
         p = place(lms[i]);
         octx.beginPath();
-        octx.arc(p.x, p.y, i === 8 ? 7 : 4, 0, Math.PI * 2);
-        octx.fillStyle =
-          i === 8 ? "rgba(80,150,255,0.95)" : i === 4 ? "rgba(255,150,60,0.95)" : "rgba(150,150,150,0.8)";
+        octx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+        octx.fillStyle = i === 4 ? "rgba(200,140,80,0.7)" : "rgba(160,160,160,0.55)";
         octx.fill();
       }
+      // the cursor: a filled dot + ring at the fingertip, reacting to pinch
+      var col = pinching ? "80,150,255" : "40,40,40";
+      octx.beginPath();
+      octx.arc(cx, cy, pinching ? 8 : 6, 0, Math.PI * 2);
+      octx.fillStyle = "rgba(" + col + ",0.95)";
+      octx.fill();
+      octx.beginPath();
+      octx.arc(cx, cy, pinching ? 15 : 18, 0, Math.PI * 2);
+      octx.strokeStyle = "rgba(" + col + ",0.9)";
+      octx.lineWidth = 2;
+      octx.stroke();
     }
 
     function processHand(lms, W, H) {
@@ -358,6 +368,8 @@
         pinching = false;
       }
 
+      // Cursor is drawn on the canvas at the fingertip (see drawSkeleton), so
+      // no separate DOM dot here — the hand itself is the pointer.
       if (pinching) {
         if (Math.hypot(cx - pinchStartX, cy - pinchStartY) > G.DRAG_THRESH_PX) isDrag = true;
         if (isDrag) {
@@ -365,11 +377,9 @@
           if (Math.abs(dY) > G.SCROLL_DEADZONE) window.scrollBy(0, -dY * G.SCROLL_GAIN);
           lastScrollY = cy;
         }
-        moveCursor(cx, cy, "pinch");
-        setStatus(isDrag ? "scrolling…" : "pinch", true);
+        setStatus(isDrag ? "scrolling…" : "pinch · esc to exit", true);
       } else {
-        moveCursor(cx, cy, "idle");
-        setStatus("pinch to click · pinch-drag to scroll", true);
+        setStatus("move your hand · pinch to click · pinch-drag to scroll · esc to exit", true);
       }
     }
 
