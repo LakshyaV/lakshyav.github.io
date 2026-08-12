@@ -370,6 +370,146 @@
     vizFrame(ts || t * 16);
   }
 
+  /* ========================== the page hears you ========================
+     No text box. Typing anywhere echoes in the island, certain words get a
+     dry reply, and the bottleneck claim gets struck through while you prove
+     it. Space only scrolls until a word has started; Escape backs out. */
+  var TYPE_REPLIES = [
+    { re: /\b(hi|hey|hello)\b/, say: "hey. i'm listening." },
+    { re: /\bwho\b/, say: "lakshya's page. he's the signal guy." },
+    { re: /\borigin\b/, say: "the whole reason this page listens." },
+    { re: /\bwaterloo\b/, say: "goose country." },
+    { re: /\b(keyboard|bottleneck)\b/, say: "exactly." },
+    { re: /\bhire\b/, say: "smart. email's at the bottom." },
+    { re: /\b(play|music)\b/, say: "putting something on.", act: "play" },
+    { re: /\b(dark|light)\b/, say: "", act: "paper" },
+  ];
+
+  var islandText = document.getElementById("island-text");
+  var srReply = document.getElementById("sr-reply");
+  var bottleneck = document.getElementById("bottleneck");
+
+  var buffer = "";
+  var decayTimer = null;
+  var scrambleTimer = null;
+  var GLYPHS = "abcdefghijklmnopqrstuvwxyz0123456789";
+
+  function interactive(el) {
+    return (
+      el.closest &&
+      (el.closest("input, textarea, select, button, a, [contenteditable]") ||
+        el.closest("#island"))
+    );
+  }
+
+  function renderEcho() {
+    var shown = buffer.slice(-24);
+    if (reduced || shown.length === 0) {
+      islandText.textContent = shown;
+      return;
+    }
+    // newest char flickers through glyphs before locking
+    var head = shown.slice(0, -1);
+    var steps = 0;
+    clearInterval(scrambleTimer);
+    scrambleTimer = setInterval(function () {
+      steps += 1;
+      if (steps > 3 || buffer.slice(-24, -1) !== head) {
+        clearInterval(scrambleTimer);
+        islandText.textContent = buffer.slice(-24);
+        return;
+      }
+      islandText.textContent = head + GLYPHS[Math.floor(Math.random() * GLYPHS.length)];
+    }, 34);
+  }
+
+  function endSession(withReply) {
+    if (withReply) {
+      var text = " " + buffer.toLowerCase() + " ";
+      for (var i = 0; i < TYPE_REPLIES.length; i++) {
+        var r = TYPE_REPLIES[i];
+        if (r.re.test(text)) {
+          if (r.act === "play") {
+            island.classList.add("open");
+            if (!audio.src) loadTrack(0, true);
+            else audio.play().catch(function () {});
+          }
+          if (r.act === "paper") paperToggle.click();
+          if (r.say) {
+            islandText.textContent = r.say;
+            srReply.textContent = r.say;
+            buffer = "";
+            decayTimer = setTimeout(function () {
+              endSession(false);
+            }, 3500);
+            return;
+          }
+          break;
+        }
+      }
+    }
+    buffer = "";
+    islandText.textContent = "";
+    srReply.textContent = "";
+    island.classList.remove("hearing");
+    if (bottleneck) {
+      setTimeout(function () {
+        if (!island.classList.contains("hearing")) bottleneck.classList.remove("struck");
+      }, 1000);
+    }
+  }
+
+  window.addEventListener("keydown", function (e) {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (interactive(e.target)) return;
+
+    if (e.key === "Escape") {
+      clearTimeout(decayTimer);
+      endSession(false);
+      return;
+    }
+    if (e.key === "Backspace") {
+      if (!buffer) return;
+      e.preventDefault();
+      buffer = buffer.slice(0, -1);
+    } else if (e.key.length === 1) {
+      if (e.key === " " && !buffer) return; // first space just scrolls
+      if (e.key === " ") e.preventDefault();
+      buffer += e.key;
+      energy = Math.min(1, energy + 0.3);
+    } else {
+      return;
+    }
+
+    island.classList.add("hearing");
+    if (bottleneck) bottleneck.classList.add("struck");
+    renderEcho();
+    clearTimeout(decayTimer);
+    decayTimer = setTimeout(function () {
+      endSession(true);
+    }, 2600);
+  });
+
+  /* discovery hint, once per session, keyboards only */
+  var HINT_DELAY = location.search.indexOf("hint=now") !== -1 ? 500 : 25000;
+  if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
+    setTimeout(function () {
+      var seen = false;
+      try {
+        seen = sessionStorage.getItem("type-hint") === "1";
+      } catch (_) {}
+      if (seen || buffer || island.classList.contains("hearing")) return;
+      try {
+        sessionStorage.setItem("type-hint", "1");
+      } catch (_) {}
+      island.classList.add("hearing");
+      islandText.textContent = "(you can just start typing)";
+      setTimeout(function () {
+        if (!buffer) endSession(false);
+      }, 4500);
+    }, HINT_DELAY);
+  }
+
   if (reduced) {
     sctx.beginPath();
     sctx.moveTo(0, H / 2);

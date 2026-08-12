@@ -235,6 +235,50 @@ button { font: inherit; background: none; border: none; color: inherit; cursor: 
 
 html.no-js .island { display: none; }
 
+/* --------------------- the page hears you (type anywhere) ----------------- */
+
+.island-compact { position: relative; }
+
+.island-text {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 1.1rem;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  color: var(--island-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 0.25s;
+  pointer-events: none;
+}
+.island.hearing .island-text { opacity: 1; }
+.island.hearing .island-compact canvas { opacity: 0.22; }
+.island-compact canvas { transition: opacity 0.25s; }
+
+/* the strike draws itself across the claim while you prove it */
+#bottleneck {
+  background: linear-gradient(var(--mark-red), var(--mark-red)) no-repeat 0 58% / 0% 3px;
+  transition: background-size 0.45s var(--ease);
+}
+#bottleneck.struck { background-size: 100% 3px; }
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* -------------------------------- side nav ------------------------------- */
 
 .sidenav {
