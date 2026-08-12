@@ -180,14 +180,58 @@
     [0, 17],
   ];
   var G = {
-    PINCH_ON: 0.34, // engage when dist(4,8)/handScale < this
-    PINCH_OFF: 0.5, // release above this (hysteresis)
-    SMOOTH: 0.5, // cursor EMA
-    DRAG_THRESH_PX: 22, // move past this during a pinch → it's a drag, not a tap
-    TAP_MAX_MS: 350,
-    SCROLL_GAIN: 1.4,
+    // The fingertip's normalised position only spans a narrow central band of
+    // the camera frame, so mapping it 1:1 to the screen made the cursor barely
+    // move. GAIN amplifies movement around centre so a small, comfortable hand
+    // motion reaches every edge. This was the "cursor doesn't move" bug.
+    GAIN: 2.6,
+    SMOOTH: 0.45, // cursor EMA
+    // Pinch measured as thumb-tip→index-tip distance over the index finger's
+    // own length (MCP 5 → tip 8): scale- and distance-invariant, unlike the
+    // old wrist-based metric which was unreliable at different hand distances.
+    PINCH_ON: 0.5, // engage below this
+    PINCH_OFF: 0.72, // release above this (hysteresis)
+    DRAG_THRESH_PX: 26, // move past this during a pinch → drag, not tap
+    TAP_MAX_MS: 400,
+    SCROLL_GAIN: 1.15,
     SCROLL_DEADZONE: 0.4,
     CLICK_DEBOUNCE_MS: 400,
+  };
+
+  // Pure mapping/pinch helpers — exposed for automated tests (no camera needed).
+  function clamp01(v) {
+    return v < 0 ? 0 : v > 1 ? 1 : v;
+  }
+  function gDist(a, b) {
+    var dx = a.x - b.x,
+      dy = a.y - b.y;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+  function gRawScreen(lm, W, H) {
+    return { x: (1 - lm.x) * W, y: lm.y * H }; // mirror X (selfie)
+  }
+  function gMapCursor(lm8, W, H, gain) {
+    var mx = 1 - lm8.x,
+      my = lm8.y;
+    return {
+      x: clamp01(0.5 + (mx - 0.5) * gain) * W,
+      y: clamp01(0.5 + (my - 0.5) * gain) * H,
+    };
+  }
+  function gPinchRatio(lms) {
+    return gDist(lms[4], lms[8]) / (gDist(lms[5], lms[8]) || 1e-6);
+  }
+  // Natural / Vision-Pro scroll: hand up (cy decreases) → page scrolls down.
+  function gScrollDelta(cyNow, cyPrev, gain) {
+    return -(cyNow - cyPrev) * gain;
+  }
+  window.__ctrl = {
+    clamp01: clamp01,
+    dist: gDist,
+    mapCursor: gMapCursor,
+    pinchRatio: gPinchRatio,
+    scrollDelta: gScrollDelta,
+    G: G,
   };
 
   async function startGesture() {
@@ -233,7 +277,7 @@
       } catch (_) {}
     });
 
-    setStatus("pinch to click · pinch-drag to scroll", true);
+    setStatus("move your hand · pinch to click, pinch-drag to scroll", true);
 
     var rafId = 0;
     var lastVideoTime = -1;
@@ -241,6 +285,7 @@
     var cx = window.innerWidth * 0.5,
       cy = window.innerHeight * 0.5,
       haveCursor = false;
+    moveCursor(cx, cy, "idle"); // show the cursor right away
     var pinching = false,
       pinchStartX = 0,
       pinchStartY = 0,
@@ -250,30 +295,29 @@
       lastScrollY = 0,
       lastClickT = 0;
 
-    function dist(a, b) {
-      var dx = a.x - b.x,
-        dy = a.y - b.y;
-      return Math.sqrt(dx * dx + dy * dy);
-    }
-    function toScreen(lm, W, H) {
-      return { x: (1 - lm.x) * W, y: lm.y * H }; // mirror X for a selfie cursor
-    }
-
+    // Draw the skeleton at true on-screen size, translated so the index
+    // fingertip (8) sits exactly under the amplified cursor. So the hand keeps
+    // a natural shape but travels the whole screen with the cursor.
     function drawSkeleton(lms, W, H) {
+      var anchor = gRawScreen(lms[8], W, H);
+      function place(lm) {
+        var r = gRawScreen(lm, W, H);
+        return { x: cx + (r.x - anchor.x), y: cy + (r.y - anchor.y) };
+      }
       var i, p, s, e;
       octx.lineWidth = 4;
       octx.strokeStyle = "rgba(120,120,120,0.55)";
       octx.lineCap = "round";
       for (i = 0; i < HAND_CONNECTIONS.length; i++) {
-        s = toScreen(lms[HAND_CONNECTIONS[i][0]], W, H);
-        e = toScreen(lms[HAND_CONNECTIONS[i][1]], W, H);
+        s = place(lms[HAND_CONNECTIONS[i][0]]);
+        e = place(lms[HAND_CONNECTIONS[i][1]]);
         octx.beginPath();
         octx.moveTo(s.x, s.y);
         octx.lineTo(e.x, e.y);
         octx.stroke();
       }
       for (i = 0; i < lms.length; i++) {
-        p = toScreen(lms[i], W, H);
+        p = place(lms[i]);
         octx.beginPath();
         octx.arc(p.x, p.y, i === 8 ? 7 : 4, 0, Math.PI * 2);
         octx.fillStyle =
@@ -284,7 +328,7 @@
 
     function processHand(lms, W, H) {
       var now = performance.now();
-      var tip = toScreen(lms[8], W, H);
+      var tip = gMapCursor(lms[8], W, H, G.GAIN); // amplified, mirrored
       if (!haveCursor) {
         cx = tip.x;
         cy = tip.y;
@@ -294,7 +338,7 @@
         cy += G.SMOOTH * (tip.y - cy);
       }
 
-      var ratio = dist(lms[4], lms[8]) / (dist(lms[0], lms[9]) || 1e-6);
+      var ratio = gPinchRatio(lms);
 
       if (!pinching && ratio < G.PINCH_ON) {
         pinching = true;
