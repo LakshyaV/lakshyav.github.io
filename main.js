@@ -1,4 +1,4 @@
-/* paper & ink — island player, palette dock, doodles, contribution graph,
+/* paper & ink — island player, palette dock, contribution graph,
    and the signal that never stops listening. */
 
 (function () {
@@ -9,22 +9,6 @@
   } catch (_) {}
 
   var root = document.documentElement;
-
-  /* ------------------------- name types itself ------------------------- */
-  (function () {
-    var typed = document.getElementById("typed");
-    if (!typed) return;
-    var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (root.classList.contains("skip-intro") || reduced) return;
-    var full = typed.textContent;
-    typed.textContent = "";
-    var i = 0;
-    var timer = setInterval(function () {
-      i += 1;
-      typed.textContent = full.slice(0, i);
-      if (i >= full.length) clearInterval(timer);
-    }, 95);
-  })();
 
   /* ============================ palette dock ============================ */
   var chips = document.querySelectorAll(".chip");
@@ -55,29 +39,6 @@
       try {
         localStorage.setItem("paper", dark ? "light" : "dark");
       } catch (_) {}
-    });
-  }
-
-  /* ============================== doodles =============================== */
-  var doodles = document.querySelectorAll(".doodle");
-  if ("IntersectionObserver" in window) {
-    var dio = new IntersectionObserver(
-      function (entries) {
-        entries.forEach(function (e) {
-          if (e.isIntersecting) {
-            e.target.classList.add("drawn");
-            dio.unobserve(e.target);
-          }
-        });
-      },
-      { threshold: 0.4 }
-    );
-    doodles.forEach(function (d) {
-      dio.observe(d);
-    });
-  } else {
-    doodles.forEach(function (d) {
-      d.classList.add("drawn");
     });
   }
 
