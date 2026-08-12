@@ -74,10 +74,13 @@
   }
 
   /* ========================= contribution graph =========================
-     Real contributions, drawn in the site's own accent so every palette
-     recolours the year. Falls back to a friendly line if the API is out. */
+     The last 30 days only, drawn in the site's accent so every palette
+     recolours it. Cells pop in on a stagger, a streak badge counts the
+     run, and level-4 days glow. Falls back quietly if the API is out. */
   var graph = document.getElementById("gh-graph");
   var totalEl = document.getElementById("gh-total");
+  var streakEl = document.getElementById("gh-streak");
+  var legendEl = document.getElementById("gh-legend");
   var fallback = document.getElementById("gh-fallback");
 
   fetch("https://github-contributions-api.jogruber.de/v4/LakshyaV?y=last")
@@ -86,39 +89,77 @@
       return r.json();
     })
     .then(function (data) {
-      var days = data.contributions || [];
-      if (!days.length) throw new Error("empty");
+      var all = data.contributions || [];
+      if (!all.length) throw new Error("empty");
+
+      // keep the trailing 30 days, but pad to a whole week at the front so
+      // the grid's weekday rows line up cleanly
+      var todayStr = new Date().toDateString();
+      var recent = all.slice(-30);
+      while (recent.length && new Date(recent[0].date + "T00:00:00").getDay() !== 0) {
+        var idx = all.indexOf(recent[0]);
+        if (idx <= 0) break;
+        recent.unshift(all[idx - 1]);
+      }
+
+      var monthTotal = all.slice(-30).reduce(function (n, d) { return n + d.count; }, 0);
+
+      // current streak: consecutive days with activity, ending today or (if
+      // today is still blank) yesterday
+      var streak = 0;
+      for (var i = all.length - 1; i >= 0; i--) {
+        if (all[i].count > 0) streak++;
+        else if (i === all.length - 1) continue;
+        else break;
+      }
 
       var grid = document.createElement("div");
-      grid.className = "gh-grid";
+      grid.className = "gh-month";
       var week = null;
-      days.forEach(function (day, i) {
-        if (i % 7 === 0) {
+      var firstWeek = true;
+      recent.forEach(function (day, i) {
+        var dow = new Date(day.date + "T00:00:00").getDay(); // 0=Sun … 6=Sat
+        if (!week || dow === 0) {
           week = document.createElement("div");
           week.className = "gh-week";
           grid.appendChild(week);
+          // pad the opening week so the weekday rows line up
+          if (firstWeek && dow !== 0) {
+            for (var s = 0; s < dow; s++) {
+              var sp = document.createElement("span");
+              sp.className = "gh-day";
+              sp.style.visibility = "hidden";
+              sp.style.animation = "none";
+              week.appendChild(sp);
+            }
+          }
+          firstWeek = false;
         }
         var cell = document.createElement("span");
         cell.className = "gh-day";
         cell.setAttribute("data-level", String(day.level));
+        cell.style.animationDelay = i * 14 + "ms";
+        if (new Date(day.date + "T00:00:00").toDateString() === todayStr) cell.classList.add("today");
         cell.title = day.date + " · " + day.count + (day.count === 1 ? " contribution" : " contributions");
         week.appendChild(cell);
       });
 
       if (fallback) fallback.remove();
       graph.appendChild(grid);
-      graph.scrollLeft = graph.scrollWidth; // land on the most recent weeks
+      graph.scrollLeft = graph.scrollWidth;
 
-      var total = data.total && (data.total.lastYear || data.total[new Date().getFullYear()]);
-      if (totalEl && total) {
-        totalEl.textContent = total + " contributions in the last year";
-      } else if (totalEl) {
-        totalEl.textContent = "a year of pushes, drawn below";
+      if (totalEl) {
+        totalEl.innerHTML = "<b>" + monthTotal + "</b> contribution" + (monthTotal === 1 ? "" : "s") + " this month";
       }
+      if (streakEl && streak > 1) {
+        streakEl.textContent = "🔥 " + streak + "-day streak";
+        streakEl.hidden = false;
+      }
+      if (legendEl) legendEl.hidden = false;
     })
     .catch(function () {
       if (totalEl) totalEl.textContent = "github is being shy right now";
-      if (fallback) fallback.textContent = "the graph would go here. see the real one on github ↗";
+      if (fallback) fallback.textContent = "see the real graph on github ↗";
     });
 
   /* ============================ dynamic island ===========================
