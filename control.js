@@ -230,32 +230,26 @@
     // old wrist-based metric which was unreliable at different hand distances.
     PINCH_ON: 0.45, // engage below this
     PINCH_OFF: 0.62, // release above this (hysteresis) — lower so release always registers
-    WRIST_SMOOTH: 0.45, // EMA on the wrist position → jitter-free but responsive
-    // Scroll is a JOYSTICK on the smoothed wrist offset from where you pinched.
-    // Sensitive by design: it starts the moment your hand moves (tiny deadzone)
-    // and reaches full speed with a SMALL movement, so you never have to swing
-    // your hand to the edge of frame. Velocity is eased and applied every
-    // animation frame (see loop) so it stays smooth despite ~30fps detection.
-    SCROLL_DEADZONE: 0.015, // start scrolling almost as soon as the hand moves
-    SCROLL_SPEED: 1500, // (offset − deadzone) → px/frame; hits max within ~6% of frame
-    SCROLL_MAX: 90, // px/frame cap
-    SCROLL_DIR: -1, // -1 = swipe hand UP scrolls DOWN (grab/Vision-Pro feel)
+    // Scroll follows the CURSOR (the amplified fingertip you actually see move),
+    // NOT the wrist — the wrist barely moves unless you swing your whole arm to
+    // the frame edge, which is why scroll "only worked at the extremes". Offsets
+    // here are screen PIXELS of cursor movement from where you pinched, so a
+    // small hand motion (amplified into a big cursor motion) scrolls right away.
+    SCROLL_GRACE_MS: 120, // after a pinch, ignore the finger's settle drift this long
+    SCROLL_DEADZONE: 10, // px of cursor movement before scrolling starts
+    SCROLL_SPEED: 1.0, // (offset px − deadzone) → scroll px/frame
+    SCROLL_MAX: 95, // px/frame cap
+    SCROLL_DIR: -1, // -1 = move hand UP scrolls DOWN (grab/Vision-Pro feel)
     SCROLL_EASE: 0.3, // per-frame easing toward target velocity
-    // A pinch is a CLICK unless it clearly became a scroll — a bigger, separate
-    // threshold from the scroll deadzone, so responsive scrolling doesn't
-    // re-suppress clicks (a small tap can nudge-scroll and still click).
-    CLICK_CANCEL_MOVE: 0.08, // wrist moved more than this → it was a scroll, no click
-    CLICK_MAX_MS: 600, // held longer than this → it was a scroll
     CLICK_DEBOUNCE_MS: 300,
   };
 
-  // Joystick scroll velocity from the hand's vertical offset from the pinch
-  // anchor (raw normalised units). Exposed for tests.
-  function gScrollVel(offset) {
-    var mag = Math.abs(offset) - G.SCROLL_DEADZONE;
+  // Scroll velocity from the cursor's vertical offset (screen px) from where
+  // you pinched. Exposed for tests.
+  function gScrollVel(offsetPx) {
+    var mag = Math.abs(offsetPx) - G.SCROLL_DEADZONE;
     if (mag <= 0) return 0;
-    var v = G.SCROLL_DIR * (offset < 0 ? -1 : 1) * Math.min(mag * G.SCROLL_SPEED, G.SCROLL_MAX);
-    return v;
+    return G.SCROLL_DIR * (offsetPx < 0 ? -1 : 1) * Math.min(mag * G.SCROLL_SPEED, G.SCROLL_MAX);
   }
 
   // Pure mapping/pinch helpers — exposed for automated tests (no camera needed).
@@ -349,13 +343,10 @@
       haveCursor = false;
     var pinching = false,
       pinchStartT = 0,
-      anchorWristY = 0, // smoothed wrist-Y where the pinch began
-      smoothWristY = 0, // EMA of the wrist, used for the scroll joystick
-      haveWrist = false,
+      anchorCursorY = 0, // cursor Y where scrolling begins (after the grace)
       clickX = 0,
       clickY = 0, // cursor aim captured at pinch-start
-      maxOffset = 0, // largest wrist drift seen during this pinch
-      didScroll = false, // did this pinch clearly become a scroll?
+      hasScrolled = false, // did this pinch move the page? (then it's not a click)
       scrollTargetVel = 0, // set on detection, applied+eased every frame in loop
       scrollCurVel = 0,
       lastClickT = 0;
@@ -415,28 +406,18 @@
       }
 
       var ratio = gPinchRatio(lms);
-      var wristY = lms[0].y;
-      if (!haveWrist) {
-        smoothWristY = wristY;
-        haveWrist = true;
-      } else {
-        smoothWristY += G.WRIST_SMOOTH * (wristY - smoothWristY);
-      }
 
       if (!pinching && ratio < G.PINCH_ON) {
         // pinch begins
         pinching = true;
         pinchStartT = now;
-        anchorWristY = smoothWristY;
+        anchorCursorY = cy;
         clickX = cx;
         clickY = cy;
-        maxOffset = 0;
-        didScroll = false;
+        hasScrolled = false;
       } else if (pinching && ratio > G.PINCH_OFF) {
-        // pinch released. A pinch is a CLICK unless it clearly became a scroll:
-        // moved a lot, or held a long time. Ordinary drift no longer kills it.
-        var wasScroll = didScroll || maxOffset > G.CLICK_CANCEL_MOVE || now - pinchStartT > G.CLICK_MAX_MS;
-        if (!wasScroll && now - lastClickT > G.CLICK_DEBOUNCE_MS) {
+        // pinch released. A pinch that never scrolled is a CLICK.
+        if (!hasScrolled && now - lastClickT > G.CLICK_DEBOUNCE_MS) {
           clickAt(clickX, clickY);
           lastClickT = now;
         }
@@ -444,23 +425,30 @@
         scrollTargetVel = 0;
       }
 
-      // While pinched, the smoothed wrist offset sets a target scroll velocity;
-      // the actual scrolling is eased and applied every frame in loop().
       if (pinching) {
-        var offset = smoothWristY - anchorWristY;
-        if (Math.abs(offset) > maxOffset) maxOffset = Math.abs(offset);
-        // Scroll responds immediately (small deadzone). Whether it counts as a
-        // scroll for click-cancellation is decided separately by maxOffset/time
-        // on release, so a responsive scroll never re-suppresses a tap-click.
-        scrollTargetVel = gScrollVel(offset);
-        setStatus(
-          scrollTargetVel < 0
-            ? "scrolling up ↑ · esc to exit"
-            : scrollTargetVel > 0
-              ? "scrolling down ↓ · esc to exit"
-              : "hold + move to scroll · release to click · esc to exit",
-          true
-        );
+        if (now - pinchStartT < G.SCROLL_GRACE_MS) {
+          // Grace window: the fingertip drifts as the pinch closes. Keep the
+          // anchor (and click aim) glued to the cursor so that settle doesn't
+          // scroll, and a quick tap here stays a clean click.
+          anchorCursorY = cy;
+          clickX = cx;
+          clickY = cy;
+          scrollTargetVel = 0;
+          setStatus("pinch · release to click, move to scroll · esc to exit", true);
+        } else {
+          // After the grace, ANY cursor movement scrolls — the cursor moves with
+          // your hand, so this responds the instant you move.
+          scrollTargetVel = gScrollVel(cy - anchorCursorY);
+          if (scrollTargetVel !== 0) hasScrolled = true;
+          setStatus(
+            scrollTargetVel < 0
+              ? "scrolling up ↑ · esc to exit"
+              : scrollTargetVel > 0
+                ? "scrolling down ↓ · esc to exit"
+                : "move to scroll · release to click · esc to exit",
+            true
+          );
+        }
       } else {
         scrollTargetVel = 0;
         setStatus("move your hand · pinch to click · pinch + move to scroll · esc to exit", true);
