@@ -125,31 +125,59 @@
 
   // Click the real DOM element under (x,y). The overlay + cursor are drawn on a
   // pointer-events:none canvas, so elementFromPoint returns the true element.
+  var CLICKABLE_SEL =
+    "a[href], button, [role=button], input, label, summary, .chip, .mode, .icon-link, .sd, .ictl, .island-compact";
+
+  // Nearest clickable element within r px of (x,y) — a magnetic hit test so an
+  // imprecise camera cursor still lands on small links.
+  function nearestClickable(x, y, r) {
+    var best = null,
+      bestD = r * r;
+    var els = document.querySelectorAll(CLICKABLE_SEL);
+    for (var i = 0; i < els.length; i++) {
+      var b = els[i].getBoundingClientRect();
+      if (b.width === 0 || b.height === 0 || b.bottom < 0 || b.top > window.innerHeight) continue;
+      var nx = Math.max(b.left, Math.min(x, b.right));
+      var ny = Math.max(b.top, Math.min(y, b.bottom));
+      var dx = x - nx,
+        dy = y - ny,
+        d = dx * dx + dy * dy;
+      if (d < bestD) {
+        bestD = d;
+        best = els[i];
+      }
+    }
+    return best;
+  }
+
   function clickAt(x, y) {
     spawnRipple(x, y);
-    var el = document.elementFromPoint(x, y);
-    if (!el) return;
+    var direct = document.elementFromPoint(x, y);
+    var target = (direct && direct.closest && direct.closest(CLICKABLE_SEL)) || nearestClickable(x, y, 60);
+    if (!target) return;
+
     // Links: a synthetic click can't open target=_blank — that needs a trusted
     // user gesture, and a pinch isn't one, so the browser popup-blocks it (this
     // is why "clicking links didn't work at all"). Navigate directly instead.
-    var a = el.closest ? el.closest("a[href]") : null;
+    var a = target.matches && target.matches("a[href]") ? target : target.closest && target.closest("a[href]");
     if (a && a.href) {
       window.location.href = a.href; // same tab, always allowed
       return;
     }
-    // Everything else (buttons, toggles, chips): fire pointer/mouse events...
+    // Everything else (buttons, toggles, chips): fire pointer/mouse events then click.
     ["pointerdown", "mousedown", "pointerup", "mouseup"].forEach(function (type) {
-      el.dispatchEvent(
+      target.dispatchEvent(
         new MouseEvent(type, { bubbles: true, cancelable: true, clientX: x, clientY: y, view: window })
       );
     });
     try {
-      if (el.focus) el.focus();
+      if (target.focus) target.focus();
     } catch (_) {}
-    // ...then the native click, which reliably navigates links, submits, and
-    // triggers onclick handlers (bubbles up from a child to its <a>/<button>).
-    if (typeof el.click === "function") el.click();
-    else el.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, clientX: x, clientY: y, view: window }));
+    if (typeof target.click === "function") target.click();
+    else
+      target.dispatchEvent(
+        new MouseEvent("click", { bubbles: true, cancelable: true, clientX: x, clientY: y, view: window })
+      );
   }
 
   function teardown() {
@@ -200,17 +228,24 @@
     // Pinch measured as thumb-tip→index-tip distance over the index finger's
     // own length (MCP 5 → tip 8): scale- and distance-invariant, unlike the
     // old wrist-based metric which was unreliable at different hand distances.
-    PINCH_ON: 0.5, // engage below this
-    PINCH_OFF: 0.72, // release above this (hysteresis)
-    // Scroll is a JOYSTICK, not a drag: while pinched, how far your hand sits
-    // (in raw normalised units) above/below where you pinched sets a continuous
-    // scroll speed. So a small held offset scrolls a whole page — displacement
-    // dragging couldn't, since it's capped by how far your hand can travel.
-    SCROLL_DEADZONE: 0.035, // hold within this of the anchor = no scroll (lets you click)
-    SCROLL_SPEED: 900, // (offset − deadzone) → px/frame; wider band = smoother control
+    PINCH_ON: 0.45, // engage below this
+    PINCH_OFF: 0.62, // release above this (hysteresis) — lower so release always registers
+    WRIST_SMOOTH: 0.35, // EMA on the wrist position → jitter-free scroll
+    // Scroll is a JOYSTICK on the smoothed wrist offset from where you pinched;
+    // a small held offset scrolls a whole page. Velocity is eased and applied
+    // every animation frame (see loop) so it's smooth even though detection is
+    // only ~30fps.
+    SCROLL_DEADZONE: 0.03, // hold within this of the anchor = no scroll
+    SCROLL_SPEED: 900, // (offset − deadzone) → px/frame
     SCROLL_MAX: 95, // px/frame cap
     SCROLL_DIR: -1, // -1 = swipe hand UP scrolls DOWN (grab/Vision-Pro feel)
-    CLICK_DEBOUNCE_MS: 350,
+    SCROLL_EASE: 0.25, // per-frame easing toward target velocity
+    // A pinch is a CLICK unless it clearly became a scroll. Forgiving on both
+    // axes so ordinary hand drift during a tap doesn't eat the click — the old
+    // bug where any wrist movement suppressed every click.
+    CLICK_CANCEL_MOVE: 0.07, // wrist moved more than this (normalised) → it was a scroll
+    CLICK_MAX_MS: 550, // held longer than this → it was a scroll
+    CLICK_DEBOUNCE_MS: 300,
   };
 
   // Joystick scroll velocity from the hand's vertical offset from the pinch
@@ -312,12 +347,16 @@
       cy = window.innerHeight * 0.5,
       haveCursor = false;
     var pinching = false,
-      anchorWristY = 0, // raw normalised WRIST-Y where the pinch began (stable
-      // during a pinch, unlike the fingertip which moves toward the thumb — that
-      // false-triggered scroll and suppressed every click)
+      pinchStartT = 0,
+      anchorWristY = 0, // smoothed wrist-Y where the pinch began
+      smoothWristY = 0, // EMA of the wrist, used for the scroll joystick
+      haveWrist = false,
       clickX = 0,
-      clickY = 0, // cursor aim captured at pinch-start, before the fingertip drifts
-      scrolled = false, // did this pinch move the page? (then it's not a click)
+      clickY = 0, // cursor aim captured at pinch-start
+      maxOffset = 0, // largest wrist drift seen during this pinch
+      didScroll = false, // did this pinch clearly become a scroll?
+      scrollTargetVel = 0, // set on detection, applied+eased every frame in loop
+      scrollCurVel = 0,
       lastClickT = 0;
 
     // The hand IS the cursor: the skeleton is drawn at true size translated so
@@ -375,38 +414,53 @@
       }
 
       var ratio = gPinchRatio(lms);
-      var wristY = lms[0].y; // raw normalised WRIST-Y — stable during a pinch
+      var wristY = lms[0].y;
+      if (!haveWrist) {
+        smoothWristY = wristY;
+        haveWrist = true;
+      } else {
+        smoothWristY += G.WRIST_SMOOTH * (wristY - smoothWristY);
+      }
 
       if (!pinching && ratio < G.PINCH_ON) {
-        // pinch begins — anchor the joystick to the wrist, and remember where
-        // the cursor was aiming BEFORE the fingertip drifts toward the thumb
+        // pinch begins
         pinching = true;
-        anchorWristY = wristY;
+        pinchStartT = now;
+        anchorWristY = smoothWristY;
         clickX = cx;
         clickY = cy;
-        scrolled = false;
+        maxOffset = 0;
+        didScroll = false;
       } else if (pinching && ratio > G.PINCH_OFF) {
-        // pinch released — a pinch that never scrolled is a CLICK, at the aim
-        if (!scrolled && now - lastClickT > G.CLICK_DEBOUNCE_MS) {
+        // pinch released. A pinch is a CLICK unless it clearly became a scroll:
+        // moved a lot, or held a long time. Ordinary drift no longer kills it.
+        var wasScroll = didScroll || maxOffset > G.CLICK_CANCEL_MOVE || now - pinchStartT > G.CLICK_MAX_MS;
+        if (!wasScroll && now - lastClickT > G.CLICK_DEBOUNCE_MS) {
           clickAt(clickX, clickY);
           lastClickT = now;
         }
         pinching = false;
+        scrollTargetVel = 0;
       }
 
-      // Cursor is drawn on the canvas at the fingertip (see drawSkeleton), so
-      // no separate DOM dot here — the hand itself is the pointer.
+      // While pinched, the smoothed wrist offset sets a target scroll velocity;
+      // the actual scrolling is eased and applied every frame in loop().
       if (pinching) {
-        var vel = gScrollVel(wristY - anchorWristY); // joystick: whole-hand offset
-        if (vel !== 0) {
-          scrolled = true;
-          window.scrollBy(0, vel);
-          setStatus((vel < 0 ? "scrolling up ↑" : "scrolling down ↓") + " · esc to exit", true);
-        } else {
-          setStatus("hold to scroll · release to click · esc to exit", true);
-        }
+        var offset = smoothWristY - anchorWristY;
+        if (Math.abs(offset) > maxOffset) maxOffset = Math.abs(offset);
+        scrollTargetVel = gScrollVel(offset);
+        if (scrollTargetVel !== 0) didScroll = true;
+        setStatus(
+          scrollTargetVel < 0
+            ? "scrolling up ↑ · esc to exit"
+            : scrollTargetVel > 0
+              ? "scrolling down ↓ · esc to exit"
+              : "hold + move to scroll · release to click · esc to exit",
+          true
+        );
       } else {
-        setStatus("move your hand · pinch to click · pinch + move hand to scroll · esc to exit", true);
+        scrollTargetVel = 0;
+        setStatus("move your hand · pinch to click · pinch + move to scroll · esc to exit", true);
       }
     }
 
@@ -429,14 +483,18 @@
           lastLandmarks = res && res.landmarks && res.landmarks.length ? res.landmarks[0] : null;
           if (lastLandmarks) processHand(lastLandmarks, W, H);
           else {
-            if (pinching) {
-              pinching = false;
-              isDrag = false;
-            }
+            if (pinching) pinching = false;
+            scrollTargetVel = 0;
             setStatus("show me your hand ✋", true);
           }
         }
       }
+
+      // Smooth scrolling: ease the actual velocity toward the target and apply
+      // it EVERY animation frame (60fps), not just on ~30fps detection frames.
+      scrollCurVel += G.SCROLL_EASE * (scrollTargetVel - scrollCurVel);
+      if (Math.abs(scrollCurVel) > 0.3) window.scrollBy(0, scrollCurVel);
+
       if (lastLandmarks) drawSkeleton(lastLandmarks, W, H);
     }
     rafId = requestAnimationFrame(loop);
