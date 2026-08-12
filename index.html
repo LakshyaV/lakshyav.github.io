@@ -15,11 +15,11 @@
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=Caveat:wght@600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
   <script>
-    // Before paint: restore ink + paper, and skip the handwriting intro on
+    // Before paint: restore theme + paper, skip the handwriting intro on
     // return visits within the session.
     try {
-      var ink = localStorage.getItem("ink");
-      if (ink) document.documentElement.setAttribute("data-ink", ink);
+      var th = localStorage.getItem("theme");
+      if (th) document.documentElement.setAttribute("data-theme", th);
       if (localStorage.getItem("paper") === "dark") document.documentElement.setAttribute("data-paper", "dark");
       if (sessionStorage.getItem("intro-done") === "1") document.documentElement.classList.add("skip-intro");
     } catch (_) {}
@@ -27,11 +27,42 @@
 </head>
 <body>
 
-  <!-- your signal — the site listens to the visitor. cursor and scroll energy
-       become a live trace, a tiny version of the whole thesis. -->
-  <div class="signal-pill" id="signal-pill" title="this is you. cursor and scroll, live.">
-    <canvas id="signal-canvas" width="150" height="34" aria-hidden="true"></canvas>
-    <span class="signal-label">your signal</span>
+  <!-- ====================== DYNAMIC ISLAND ======================
+       Idle, it shows your signal, the visitor's own cursor and scroll
+       drawn live. Tap it and it blooms into a music player. -->
+  <div class="island" id="island">
+    <button class="island-compact" id="island-compact" aria-label="Open player">
+      <canvas id="signal-canvas" width="132" height="26" aria-hidden="true"></canvas>
+      <span class="island-dot" id="island-dot" aria-hidden="true"></span>
+    </button>
+    <div class="island-expanded" aria-hidden="true">
+      <div class="island-top">
+        <div class="island-art"><canvas id="art-canvas" width="96" height="96"></canvas></div>
+        <div class="island-meta">
+          <div class="marquee"><span id="track-title">pick a track</span></div>
+          <div class="marquee sub"><span id="track-artist">placeholder tunes, swap in yours</span></div>
+          <div class="viz" id="viz" aria-hidden="true"></div>
+        </div>
+        <div class="island-controls">
+          <button class="ictl" id="btn-prev" aria-label="Previous track">
+            <svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+          </button>
+          <button class="ictl play" id="btn-play" aria-label="Play">
+            <svg id="icon-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            <svg id="icon-pause" viewBox="0 0 24 24" style="display:none"><path d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>
+          </button>
+          <button class="ictl" id="btn-next" aria-label="Next track">
+            <svg viewBox="0 0 24 24"><path d="M16 6h2v12h-2zM6 18l8.5-6L6 6z"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="island-progress">
+        <span class="ptime" id="cur-time">0:00</span>
+        <input type="range" id="seek" min="0" max="1000" value="0" aria-label="Seek" />
+        <span class="ptime" id="dur-time">0:00</span>
+      </div>
+      <p class="island-note">your signal keeps drawing underneath. this is just the b side.</p>
+    </div>
   </div>
 
   <header class="topbar">
@@ -46,23 +77,31 @@
       <a class="icon-link" href="mailto:lakyvasu22@gmail.com" aria-label="Email" title="email">
         <svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="22,6 12,13 2,6"/></svg>
       </a>
-      <button class="icon-link" id="paper-toggle" aria-label="Toggle dark paper" title="paper">
+      <button class="icon-link" id="paper-toggle" aria-label="Toggle dark paper" title="lights">
         <svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg>
       </button>
     </nav>
   </header>
 
+  <!-- side dots -->
+  <nav class="sidenav" aria-label="Sections">
+    <a class="sd" href="#home" data-target="home"><span class="sd-dot"></span><span class="sd-label">home</span></a>
+    <a class="sd" href="#work" data-target="work"><span class="sd-dot"></span><span class="sd-label">work</span></a>
+    <a class="sd" href="#github" data-target="github"><span class="sd-dot"></span><span class="sd-label">github</span></a>
+    <a class="sd" href="#contact" data-target="contact"><span class="sd-dot"></span><span class="sd-label">contact</span></a>
+  </nav>
+
   <main class="sheet">
 
     <!-- ------------------------------ hero ------------------------------ -->
-    <section class="hero">
+    <section class="hero" id="home">
       <p class="eyebrow">hey, i'm</p>
       <h1 class="name" aria-label="lakshya">
         <span class="name-ink">lakshya</span>
         <span class="nib" aria-hidden="true"></span>
       </h1>
       <p class="tagline">
-        i make machines <span class="hl">understand people</span>.
+        i make machines <span class="hl hl-yellow">understand people</span>.
       </p>
       <p class="tagline-note" aria-hidden="true">without the keyboard, ideally &#8628;</p>
 
@@ -75,10 +114,10 @@
     <section class="block">
       <p class="block-label">about</p>
       <p class="lead">
-        i study <a class="hl" href="https://uwaterloo.ca/future-students/programs/software-engineering" target="_blank" rel="noopener noreferrer">software engineering at the university of waterloo</a>
+        i study <a class="hl hl-yellow logo-link" href="https://uwaterloo.ca/future-students/programs/software-engineering" target="_blank" rel="noopener noreferrer">software engineering at the university of waterloo<img class="mini-logo" src="https://www.google.com/s2/favicons?domain=uwaterloo.ca&sz=64" alt="" loading="lazy" /></a>
       </p>
       <p class="lead">
-        and i'm building <span class="hl hl-strong">origin</span>, a way to talk to machines without talking.
+        and i'm building <span class="hl hl-pink">origin</span>, a way to talk to machines without talking.
         sensors where glasses sit, models that recover the sentence you meant to say.
       </p>
       <svg class="doodle doodle-glasses" viewBox="0 0 200 60" aria-hidden="true">
@@ -93,39 +132,42 @@
     <section class="block">
       <p class="block-label">currently</p>
       <ul class="list">
-        <li>decoding <span class="hl">intended speech</span> from the body's own signals. the keyboard is a bottleneck and i intend to remove it</li>
-        <li>first year, <a class="hl" href="https://uwaterloo.ca" target="_blank" rel="noopener noreferrer">uwaterloo</a> software engineering</li>
+        <li>decoding <span class="hl hl-green">intended speech</span> from the body's own signals. the keyboard is a bottleneck and i intend to remove it</li>
+        <li>first year, <a class="hl hl-yellow logo-link" href="https://uwaterloo.ca" target="_blank" rel="noopener noreferrer">uwaterloo<img class="mini-logo" src="https://www.google.com/s2/favicons?domain=uwaterloo.ca&sz=64" alt="" loading="lazy" /></a> software engineering</li>
       </ul>
     </section>
 
     <!-- --------------------------- what i've done ------------------------ -->
-    <section class="block">
+    <section class="block" id="work">
       <p class="block-label">what i've done</p>
       <ul class="list">
         <li>
           machine learning research on surgical video at
-          <a class="hl" href="https://masseyeandear.org" target="_blank" rel="noopener noreferrer">mass eye and ear, harvard medical school</a>
+          <a class="hl hl-red logo-link" href="https://masseyeandear.org" target="_blank" rel="noopener noreferrer">mass eye and ear, harvard medical school<img class="mini-logo" src="https://www.google.com/s2/favicons?domain=harvard.edu&sz=64" alt="" loading="lazy" /></a>
         </li>
         <li>
-          an ai consulting project with <span class="hl">microsoft</span> at fifteen.
-          modelled data centre operations, found two billion dollars a year on the table
+          an ai consulting project with
+          <a class="hl hl-blue logo-link" href="https://microsoft.com" target="_blank" rel="noopener noreferrer">microsoft<img class="mini-logo" src="https://www.google.com/s2/favicons?domain=microsoft.com&sz=64" alt="" loading="lazy" /></a>
+          at fifteen. modelled data centre operations, found two billion dollars a year on the table
         </li>
         <li>
-          shipped medical documentation tools on <span class="hl">zebra</span> handhelds at sixteen,
-          learned to love a compute budget
+          shipped medical documentation tools on
+          <a class="hl hl-blue logo-link" href="https://www.zebra.com" target="_blank" rel="noopener noreferrer">zebra<img class="mini-logo" src="https://www.google.com/s2/favicons?domain=zebra.com&sz=64" alt="" loading="lazy" /></a>
+          handhelds at sixteen, learned to love a compute budget
         </li>
         <li>
-          talked my way into a real partnership with <span class="hl">interac</span> at seventeen.
-          a hundred thousand transactions, recommenders at 0.87 auc
+          talked my way into a real partnership with
+          <a class="hl hl-orange logo-link" href="https://www.interac.ca" target="_blank" rel="noopener noreferrer">interac<img class="mini-logo" src="https://www.google.com/s2/favicons?domain=interac.ca&sz=64" alt="" loading="lazy" /></a>
+          at seventeen. a hundred thousand transactions, recommenders at 0.87 auc
         </li>
         <li>
-          built <span class="hl hl-strong">jaw2control</span>. said a sentence without making a sound
+          built <span class="hl hl-pink">jaw2control</span>. said a sentence without making a sound
           and the right device obeyed
         </li>
         <li>
-          <span class="hl">vex worlds</span> twice, provincial champions, software lead then captain
+          <span class="hl hl-green">vex worlds</span> twice, provincial champions, software lead then captain
         </li>
-        <li>top six nationally at hosa with a mind-controlled wheelchair</li>
+        <li>top six nationally at hosa with a <span class="hl hl-red">mind-controlled wheelchair</span></li>
         <li>taught fifth graders to code when i was seven</li>
       </ul>
       <svg class="doodle doodle-bot" viewBox="0 0 140 80" aria-hidden="true">
@@ -143,10 +185,26 @@
     <section class="block">
       <p class="block-label">built fast</p>
       <ul class="list">
-        <li><span class="hl">vursor</span>, cursor for video editing. y combinator called, interviewed us out of 1500 builders, then passed. still stings</li>
-        <li><span class="hl">aicruiter</span>, interviews run end to end by an agent that answers in about a second</li>
-        <li><span class="hl">cheetcode</span>, an ai that beats the coding interview. mostly an argument about what the interview measures</li>
+        <li><span class="hl hl-orange">vursor</span>, cursor for video editing.
+          <a class="hl hl-orange logo-link" href="https://www.ycombinator.com" target="_blank" rel="noopener noreferrer">y combinator<img class="mini-logo" src="https://www.google.com/s2/favicons?domain=ycombinator.com&sz=64" alt="" loading="lazy" /></a>
+          called, interviewed us out of 1500 builders, then passed. still stings</li>
+        <li><span class="hl hl-blue">aicruiter</span>, interviews run end to end by an agent that answers in about a second</li>
+        <li><span class="hl hl-green">cheetcode</span>, an ai that beats the coding interview. mostly an argument about what the interview measures</li>
       </ul>
+    </section>
+
+    <!-- ------------------------------ github ----------------------------- -->
+    <section class="block" id="github">
+      <p class="block-label">github</p>
+      <p class="lead">
+        <span class="hl hl-green" id="gh-total">counting commits…</span>
+      </p>
+      <div class="gh-graph" id="gh-graph" aria-label="GitHub contribution graph">
+        <p class="gh-loading" id="gh-fallback">drawing the graph…</p>
+      </div>
+      <p class="gh-footnote">
+        live from <a class="hl hl-green" href="https://github.com/LakshyaV" target="_blank" rel="noopener noreferrer">github.com/LakshyaV</a>, greener with every push
+      </p>
     </section>
 
     <!-- ----------------------------- trying to --------------------------- -->
@@ -159,27 +217,28 @@
     </section>
 
     <!-- ------------------------------ contact ---------------------------- -->
-    <section class="block contact">
+    <section class="block contact" id="contact">
       <p class="block-label">say something</p>
       <p class="lead">i'm listening. that's sort of the whole point.</p>
       <div class="contact-row">
         <a class="button" href="mailto:lakyvasu22@gmail.com">email me</a>
-        <a class="hl" href="https://github.com/LakshyaV" target="_blank" rel="noopener noreferrer">github</a>
-        <a class="hl" href="https://www.linkedin.com/in/lakshyav/" target="_blank" rel="noopener noreferrer">linkedin</a>
+        <a class="hl hl-yellow" href="https://github.com/LakshyaV" target="_blank" rel="noopener noreferrer">github</a>
+        <a class="hl hl-blue" href="https://www.linkedin.com/in/lakshyav/" target="_blank" rel="noopener noreferrer">linkedin</a>
       </div>
     </section>
 
   </main>
 
-  <!-- ink dock — pick your pen -->
-  <div class="ink-dock" aria-label="Ink colour">
-    <span class="ink-label">ink</span>
-    <div class="ink-drops">
-      <button class="ink-drop" data-ink="black" style="--drop:#26201a" aria-label="Black ink" title="black"></button>
-      <button class="ink-drop" data-ink="blue" style="--drop:#2a4b8a" aria-label="Blue ink" title="pen blue"></button>
-      <button class="ink-drop" data-ink="red" style="--drop:#a03a2a" aria-label="Red ink" title="red"></button>
-      <button class="ink-drop" data-ink="green" style="--drop:#3a6b4a" aria-label="Green ink" title="green"></button>
-      <button class="ink-drop" data-ink="purple" style="--drop:#5b4a8a" aria-label="Purple ink" title="purple"></button>
+  <!-- palette dock — six moods, each with a light and dark paper -->
+  <div class="palette-dock" aria-label="Palette">
+    <span class="palette-label">palette</span>
+    <div class="palette-chips">
+      <button class="chip" data-theme="paper"  style="--chip:#c05a2a" aria-label="Paper theme"  title="paper"></button>
+      <button class="chip" data-theme="sunset" style="--chip:#e8542f" aria-label="Sunset theme" title="sunset"></button>
+      <button class="chip" data-theme="matcha" style="--chip:#4a8a3a" aria-label="Matcha theme" title="matcha"></button>
+      <button class="chip" data-theme="ocean"  style="--chip:#2a6ba8" aria-label="Ocean theme"  title="ocean"></button>
+      <button class="chip" data-theme="grape"  style="--chip:#7a4ad8" aria-label="Grape theme"  title="grape"></button>
+      <button class="chip" data-theme="sakura" style="--chip:#e0507a" aria-label="Sakura theme" title="sakura"></button>
     </div>
   </div>
 
@@ -188,6 +247,7 @@
     <span class="footer-note">written by hand, read by machines</span>
   </footer>
 
+  <audio id="audio" preload="none"></audio>
   <script src="main.js"></script>
 </body>
 </html>

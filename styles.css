@@ -1,6 +1,6 @@
 /* =========================================================================
-   paper & ink — a warm sheet of paper, one pen, and a site that listens.
-   Ink themes swap --ink-accent; paper themes swap the sheet itself.
+   paper & ink, second sheet — now with a dynamic island, a contribution
+   graph, six palettes, and highlighters in every colour of the pencil case.
    ========================================================================= */
 
 :root {
@@ -10,39 +10,50 @@
   --ink-soft: #55493c;
   --ink-faint: #97897a;
   --rule: #ded4c0;
+  --accent: #c05a2a;
+  --accent-soft: rgba(192, 90, 42, 0.16);
+  --island: #1a160f;
+  --island-ink: #f3ead9;
 
-  --ink-accent: #26201a;
-  --ink-accent-soft: rgba(38, 32, 26, 0.16);
+  /* highlighters, same pens in every theme */
+  --mark-yellow: rgba(255, 214, 66, 0.5);
+  --mark-green: rgba(126, 217, 130, 0.45);
+  --mark-blue: rgba(116, 192, 255, 0.45);
+  --mark-pink: rgba(255, 148, 198, 0.45);
+  --mark-orange: rgba(255, 165, 92, 0.5);
+  --mark-red: rgba(255, 122, 108, 0.42);
 
   --font-body: "Space Grotesk", system-ui, sans-serif;
   --font-hand: "Caveat", cursive;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
 
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --spring: cubic-bezier(0.34, 1.4, 0.44, 1);
 }
 
-:root[data-ink="blue"]   { --ink-accent: #2a4b8a; --ink-accent-soft: rgba(42, 75, 138, 0.16); }
-:root[data-ink="red"]    { --ink-accent: #a03a2a; --ink-accent-soft: rgba(160, 58, 42, 0.15); }
-:root[data-ink="green"]  { --ink-accent: #3a6b4a; --ink-accent-soft: rgba(58, 107, 74, 0.16); }
-:root[data-ink="purple"] { --ink-accent: #5b4a8a; --ink-accent-soft: rgba(91, 74, 138, 0.16); }
+/* ------------------------------ palettes -------------------------------- */
+
+:root[data-theme="sunset"] { --paper: #fdf0e4; --paper-deep: #f8e3cd; --ink: #3a2014; --ink-soft: #6e4630; --ink-faint: #b08668; --rule: #f0d4b8; --accent: #e8542f; --accent-soft: rgba(232, 84, 47, 0.16); }
+:root[data-theme="matcha"] { --paper: #f0f4e4; --paper-deep: #e3ecd0; --ink: #202a16; --ink-soft: #48583a; --ink-faint: #8a9a76; --rule: #d4e0bc; --accent: #4a8a3a; --accent-soft: rgba(74, 138, 58, 0.16); }
+:root[data-theme="ocean"]  { --paper: #e9f2f8; --paper-deep: #d9e8f2; --ink: #14222e; --ink-soft: #3a5468; --ink-faint: #7a94a8; --rule: #c4dcea; --accent: #2a6ba8; --accent-soft: rgba(42, 107, 168, 0.16); }
+:root[data-theme="grape"]  { --paper: #f2edfa; --paper-deep: #e7def4; --ink: #241a33; --ink-soft: #4e3e68; --ink-faint: #8e7cac; --rule: #dcd0ee; --accent: #7a4ad8; --accent-soft: rgba(122, 74, 216, 0.16); }
+:root[data-theme="sakura"] { --paper: #fdeff3; --paper-deep: #f8dee6; --ink: #331a24; --ink-soft: #684052; --ink-faint: #b0808f; --rule: #f0ccd8; --accent: #e0507a; --accent-soft: rgba(224, 80, 122, 0.16); }
+
+:root[data-paper="dark"] { --paper: #16120c; --paper-deep: #201a12; --ink: #efe8da; --ink-soft: #c2b6a2; --ink-faint: #7d7263; --rule: #2e2718; --accent: #e8a06a; --accent-soft: rgba(232, 160, 106, 0.16); --island: #000; --island-ink: #f3ead9; }
+:root[data-paper="dark"][data-theme="sunset"] { --paper: #1b110a; --paper-deep: #26170d; --ink: #f8e8da; --ink-soft: #d0ac92; --ink-faint: #8a6a52; --rule: #34210f; --accent: #ff7a4a; --accent-soft: rgba(255, 122, 74, 0.16); }
+:root[data-paper="dark"][data-theme="matcha"] { --paper: #10160a; --paper-deep: #18200e; --ink: #e8f2da; --ink-soft: #b0c496; --ink-faint: #6a7a56; --rule: #24300f; --accent: #7ec25a; --accent-soft: rgba(126, 194, 90, 0.16); }
+:root[data-paper="dark"][data-theme="ocean"]  { --paper: #0a1218; --paper-deep: #0f1c26; --ink: #dcecf8; --ink-soft: #9cb8cc; --ink-faint: #54708a; --rule: #14283a; --accent: #5aa8e8; --accent-soft: rgba(90, 168, 232, 0.16); }
+:root[data-paper="dark"][data-theme="grape"]  { --paper: #120c1c; --paper-deep: #1b1228; --ink: #ece4f8; --ink-soft: #b8a6d8; --ink-faint: #6c5a90; --rule: #281a40; --accent: #a880f8; --accent-soft: rgba(168, 128, 248, 0.16); }
+:root[data-paper="dark"][data-theme="sakura"] { --paper: #1a0d12; --paper-deep: #26121b; --ink: #f8e2ea; --ink-soft: #d8a6b8; --ink-faint: #8a5468; --rule: #38182a; --accent: #f87aa0; --accent-soft: rgba(248, 122, 160, 0.16); }
 
 :root[data-paper="dark"] {
-  --paper: #16120c;
-  --paper-deep: #1f1a12;
-  --ink: #efe8da;
-  --ink-soft: #bfb3a0;
-  --ink-faint: #7d7263;
-  --rule: #2e2718;
+  --mark-yellow: rgba(255, 214, 66, 0.26);
+  --mark-green: rgba(126, 217, 130, 0.24);
+  --mark-blue: rgba(116, 192, 255, 0.24);
+  --mark-pink: rgba(255, 148, 198, 0.24);
+  --mark-orange: rgba(255, 165, 92, 0.26);
+  --mark-red: rgba(255, 122, 108, 0.24);
 }
-
-:root[data-paper="dark"][data-ink="black"], :root[data-paper="dark"]:not([data-ink]) {
-  --ink-accent: #efe8da;
-  --ink-accent-soft: rgba(239, 232, 218, 0.14);
-}
-:root[data-paper="dark"][data-ink="blue"]   { --ink-accent: #7f9fd8; --ink-accent-soft: rgba(127, 159, 216, 0.16); }
-:root[data-paper="dark"][data-ink="red"]    { --ink-accent: #d8836f; --ink-accent-soft: rgba(216, 131, 111, 0.16); }
-:root[data-paper="dark"][data-ink="green"]  { --ink-accent: #8ab89a; --ink-accent-soft: rgba(138, 184, 154, 0.16); }
-:root[data-paper="dark"][data-ink="purple"] { --ink-accent: #a793d8; --ink-accent-soft: rgba(167, 147, 216, 0.16); }
 
 /* ---------------------------------- base --------------------------------- */
 
@@ -59,12 +70,12 @@ body {
   min-height: 100vh;
 }
 
-::selection { background: var(--ink-accent-soft); }
+::selection { background: var(--accent-soft); }
 
 a { color: inherit; text-decoration: none; }
 button { font: inherit; background: none; border: none; color: inherit; cursor: pointer; }
 
-:focus-visible { outline: 2px solid var(--ink-accent); outline-offset: 3px; border-radius: 2px; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
 
 /* -------------------------------- topbar --------------------------------- */
 
@@ -75,7 +86,7 @@ button { font: inherit; background: none; border: none; color: inherit; cursor: 
   display: flex;
   align-items: center;
   justify-content: space-between;
-  max-width: 44rem;
+  max-width: 46rem;
   margin: 0 auto;
   padding: 1.1rem 1.5rem 0.6rem;
   background: color-mix(in srgb, var(--paper) 88%, transparent);
@@ -86,7 +97,7 @@ button { font: inherit; background: none; border: none; color: inherit; cursor: 
   font-family: var(--font-hand);
   font-size: 1.6rem;
   font-weight: 700;
-  color: var(--ink-accent);
+  color: var(--accent);
   transform: rotate(-4deg);
 }
 
@@ -101,19 +112,168 @@ button { font: inherit; background: none; border: none; color: inherit; cursor: 
   color: var(--ink-soft);
   transition: color 0.25s, background-color 0.25s, transform 0.25s var(--ease);
 }
-.icon-link:hover { color: var(--ink-accent); background: var(--ink-accent-soft); transform: translateY(-1px); }
+.icon-link:hover { color: var(--accent); background: var(--accent-soft); transform: translateY(-1px); }
 .icon-link svg { width: 1.05rem; height: 1.05rem; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ------------------------------ dynamic island --------------------------- */
+
+.island {
+  position: fixed;
+  top: 0.75rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  width: 172px;
+  border-radius: 22px;
+  background: var(--island);
+  color: var(--island-ink);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.28), 0 1px 4px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  transition: width 0.5s var(--spring), border-radius 0.5s var(--spring);
+}
+.island.open { width: min(92vw, 360px); border-radius: 26px; }
+
+.island-compact {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  height: 38px;
+  padding: 0 1rem;
+  color: inherit;
+}
+.island-compact canvas { display: block; width: 132px; height: 26px; }
+.island-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #4ade80;
+  flex: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.island.playing .island-dot { opacity: 1; animation: pulse 1.6s ease-in-out infinite; }
+@keyframes pulse { 50% { transform: scale(1.35); opacity: 0.7; } }
+
+.island-expanded {
+  max-height: 0;
+  opacity: 0;
+  padding: 0 1rem;
+  transition: max-height 0.5s var(--spring), opacity 0.35s, padding 0.5s var(--spring);
+}
+.island.open .island-expanded { max-height: 240px; opacity: 1; padding: 0.35rem 1rem 0.9rem; }
+
+.island-top { display: flex; align-items: center; gap: 0.8rem; }
+
+.island-art {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  overflow: hidden;
+  flex: none;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+}
+.island-art canvas { width: 100%; height: 100%; display: block; }
+
+.island-meta { flex: 1; min-width: 0; }
+.marquee { overflow: hidden; white-space: nowrap; font-size: 0.82rem; font-weight: 500; }
+.marquee.sub { font-size: 0.68rem; opacity: 0.6; margin-top: 0.1rem; }
+.marquee span { display: inline-block; }
+.marquee.scrolling span { animation: marquee 9s linear infinite; }
+@keyframes marquee { 0% { transform: translateX(0); } 20% { transform: translateX(0); } 100% { transform: translateX(-60%); } }
+
+.viz { display: flex; align-items: flex-end; gap: 2px; height: 12px; margin-top: 0.35rem; }
+.viz i { width: 3px; height: 2px; border-radius: 1px; background: var(--island-ink); opacity: 0.75; transition: height 0.1s linear; }
+
+.island-controls { display: flex; align-items: center; gap: 0.25rem; flex: none; }
+.ictl {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  color: var(--island-ink);
+  transition: background-color 0.2s;
+}
+.ictl:hover { background: rgba(255, 255, 255, 0.12); }
+.ictl svg { width: 1.1rem; height: 1.1rem; fill: currentColor; }
+.ictl.play { width: 2.4rem; height: 2.4rem; background: rgba(255, 255, 255, 0.14); }
+.ictl.play:hover { background: rgba(255, 255, 255, 0.24); }
+
+.island-progress { display: flex; align-items: center; gap: 0.55rem; margin-top: 0.6rem; }
+.ptime { font-family: var(--font-mono); font-size: 0.58rem; opacity: 0.65; min-width: 2.1em; }
+#seek {
+  flex: 1;
+  appearance: none;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.22);
+  outline-offset: 4px;
+}
+#seek::-webkit-slider-thumb {
+  appearance: none;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--island-ink);
+}
+#seek::-moz-range-thumb { width: 11px; height: 11px; border: none; border-radius: 50%; background: var(--island-ink); }
+
+.island-note {
+  margin-top: 0.55rem;
+  font-family: var(--font-hand);
+  font-size: 0.95rem;
+  opacity: 0.5;
+  text-align: center;
+}
+
+html.no-js .island { display: none; }
+
+/* -------------------------------- side nav ------------------------------- */
+
+.sidenav {
+  position: fixed;
+  left: 1.2rem;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 25;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.sd { display: flex; align-items: center; gap: 0.5rem; }
+.sd-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1.5px solid var(--ink-faint);
+  transition: background-color 0.3s, border-color 0.3s, transform 0.3s var(--ease);
+}
+.sd.active .sd-dot { background: var(--accent); border-color: var(--accent); transform: scale(1.25); }
+.sd-label {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  color: var(--ink-faint);
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: opacity 0.25s, transform 0.25s var(--ease), color 0.25s;
+}
+.sd:hover .sd-label, .sd.active .sd-label { opacity: 1; transform: none; }
+.sd.active .sd-label { color: var(--accent); }
+
+@media (max-width: 72rem) { .sidenav { display: none; } }
 
 /* --------------------------------- sheet --------------------------------- */
 
 .sheet {
   position: relative;
-  max-width: 44rem;
+  max-width: 46rem;
   margin: 0 auto;
   padding: 2.5rem 1.5rem 5rem;
 }
 
-/* notebook margin rule on wide screens */
 @media (min-width: 60rem) {
   .sheet::before {
     content: "";
@@ -128,14 +288,9 @@ button { font: inherit; background: none; border: none; color: inherit; cursor: 
 
 /* ---------------------------------- hero --------------------------------- */
 
-.hero { padding: 3.5rem 0 1rem; }
+.hero { padding: 4rem 0 1rem; }
 
-.eyebrow {
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  letter-spacing: 0.14em;
-  color: var(--ink-faint);
-}
+.eyebrow { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.14em; color: var(--ink-faint); }
 
 .name {
   position: relative;
@@ -144,12 +299,11 @@ button { font: inherit; background: none; border: none; color: inherit; cursor: 
   font-weight: 700;
   font-size: clamp(4.4rem, 14vw, 7.5rem);
   line-height: 1;
-  color: var(--ink-accent);
+  color: var(--accent);
   margin-top: 0.5rem;
   transform: rotate(-1.5deg);
 }
 
-/* the name writes itself, once per session */
 .name-ink {
   display: inline-block;
   clip-path: inset(-20% 100% -20% 0);
@@ -162,7 +316,7 @@ button { font: inherit; background: none; border: none; color: inherit; cursor: 
   width: 7px;
   height: 7px;
   border-radius: 50% 50% 50% 0;
-  background: var(--ink-accent);
+  background: var(--accent);
   transform: rotate(-45deg);
   opacity: 0;
   animation: nib-move 1.5s var(--ease) 0.3s forwards;
@@ -173,12 +327,10 @@ button { font: inherit; background: none; border: none; color: inherit; cursor: 
   92% { opacity: 1; }
   100% { left: 99%; opacity: 0; }
 }
-
 html.skip-intro .name-ink { animation: none; clip-path: inset(-20% -8% -20% 0); }
 html.skip-intro .nib { animation: none; opacity: 0; }
 
 .tagline { margin-top: 1.4rem; font-size: 1.35rem; line-height: 1.5; max-width: 30ch; }
-
 .tagline-note {
   margin-top: 0.9rem;
   font-family: var(--font-hand);
@@ -195,11 +347,11 @@ html.skip-intro .nib { animation: none; opacity: 0; }
   font-family: var(--font-mono);
   font-size: 0.72rem;
   letter-spacing: 0.16em;
-  color: var(--ink-faint);
+  color: var(--accent);
   margin-bottom: 1rem;
 }
 
-.lead { font-size: 1.1rem; line-height: 1.65; color: var(--ink-soft); max-width: 56ch; }
+.lead { font-size: 1.1rem; line-height: 1.7; color: var(--ink-soft); max-width: 56ch; }
 .lead + .lead { margin-top: 0.8rem; }
 
 .list { list-style: none; max-width: 58ch; }
@@ -208,7 +360,7 @@ html.skip-intro .nib { animation: none; opacity: 0; }
   padding-left: 1.4rem;
   margin-bottom: 0.85rem;
   font-size: 1.02rem;
-  line-height: 1.62;
+  line-height: 1.68;
   color: var(--ink-soft);
 }
 .list li::before {
@@ -219,26 +371,41 @@ html.skip-intro .nib { animation: none; opacity: 0; }
   width: 6px;
   height: 6px;
   border-radius: 50% 50% 50% 0;
-  background: var(--ink-accent);
+  background: var(--accent);
   transform: rotate(-45deg);
   opacity: 0.8;
 }
 
-/* highlighter-marker links and emphasis */
+/* highlighters — a real pencil case this time */
 .hl {
   color: var(--ink);
   font-weight: 500;
-  background: linear-gradient(to top, var(--ink-accent-soft) 38%, transparent 38%);
-  padding: 0 0.1em;
+  padding: 0 0.12em;
   border-radius: 2px;
+  background: linear-gradient(to top, var(--mark, var(--accent-soft)) 42%, transparent 42%);
   transition: background-color 0.25s;
 }
-a.hl:hover { background: linear-gradient(to top, var(--ink-accent-soft) 92%, transparent 92%); }
-.hl-strong { font-weight: 600; color: var(--ink-accent); }
+a.hl:hover { background: linear-gradient(to top, var(--mark, var(--accent-soft)) 96%, transparent 96%); }
+.hl-yellow { --mark: var(--mark-yellow); }
+.hl-green { --mark: var(--mark-green); }
+.hl-blue { --mark: var(--mark-blue); }
+.hl-pink { --mark: var(--mark-pink); }
+.hl-orange { --mark: var(--mark-orange); }
+.hl-red { --mark: var(--mark-red); }
+
+.logo-link .mini-logo { white-space: nowrap; }
+.mini-logo {
+  display: inline-block;
+  width: 0.95em;
+  height: 0.95em;
+  margin-left: 0.3em;
+  vertical-align: -0.12em;
+  border-radius: 3px;
+}
 
 /* -------------------------------- doodles -------------------------------- */
 
-.doodle { display: block; margin-top: 1.6rem; color: var(--ink-accent); opacity: 0.85; }
+.doodle { display: block; margin-top: 1.6rem; color: var(--accent); opacity: 0.9; }
 .doodle .dpath {
   fill: none;
   stroke: currentColor;
@@ -254,6 +421,28 @@ a.hl:hover { background: linear-gradient(to top, var(--ink-accent-soft) 92%, tra
 .doodle-glasses { width: 11rem; }
 .doodle-bot { width: 8.5rem; }
 
+/* ------------------------------ github graph ----------------------------- */
+
+.gh-graph {
+  margin-top: 1.2rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+}
+.gh-grid { display: grid; grid-auto-flow: column; gap: 3px; width: max-content; }
+.gh-week { display: grid; grid-template-rows: repeat(7, 1fr); gap: 3px; }
+.gh-day {
+  width: 10px;
+  height: 10px;
+  border-radius: 2.5px;
+  background: var(--paper-deep);
+}
+.gh-day[data-level="1"] { background: color-mix(in srgb, var(--accent) 25%, var(--paper-deep)); }
+.gh-day[data-level="2"] { background: color-mix(in srgb, var(--accent) 50%, var(--paper-deep)); }
+.gh-day[data-level="3"] { background: color-mix(in srgb, var(--accent) 75%, var(--paper-deep)); }
+.gh-day[data-level="4"] { background: var(--accent); }
+.gh-loading { font-family: var(--font-mono); font-size: 0.72rem; color: var(--ink-faint); }
+.gh-footnote { margin-top: 0.8rem; font-size: 0.85rem; color: var(--ink-faint); }
+
 /* -------------------------------- contact -------------------------------- */
 
 .contact { padding-bottom: 2rem; }
@@ -262,49 +451,20 @@ a.hl:hover { background: linear-gradient(to top, var(--ink-accent-soft) 92%, tra
 .button {
   display: inline-block;
   padding: 0.7rem 1.4rem;
-  border: 1.5px solid var(--ink-accent);
+  border: 1.5px solid var(--accent);
   border-radius: 999px 999px 999px 4px;
-  color: var(--ink-accent);
+  color: var(--accent);
   font-weight: 500;
   transition: background-color 0.25s, color 0.25s, transform 0.25s var(--ease);
 }
-.button:hover { background: var(--ink-accent); color: var(--paper); transform: translateY(-1px) rotate(-0.5deg); }
+.button:hover { background: var(--accent); color: var(--paper); transform: translateY(-1px) rotate(-0.5deg); }
 
-/* ------------------------------ signal pill ------------------------------ */
+/* ------------------------------ palette dock ----------------------------- */
 
-.signal-pill {
-  position: fixed;
-  top: 0.9rem;
-  right: 1rem;
-  z-index: 40;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.15rem;
-  padding: 0.4rem 0.7rem 0.3rem;
-  border: 1px solid var(--rule);
-  border-radius: 1.2rem;
-  background: color-mix(in srgb, var(--paper-deep) 80%, transparent);
-  backdrop-filter: blur(6px);
-}
-.signal-pill canvas { display: block; width: 150px; height: 34px; }
-.signal-label {
-  font-family: var(--font-mono);
-  font-size: 0.55rem;
-  letter-spacing: 0.14em;
-  color: var(--ink-faint);
-}
-
-@media (max-width: 46rem) {
-  .signal-pill { display: none; }
-}
-
-/* -------------------------------- ink dock ------------------------------- */
-
-.ink-dock {
+.palette-dock {
   position: fixed;
   bottom: 1.1rem;
-  left: 1.1rem;
+  right: 1.1rem;
   z-index: 40;
   display: flex;
   align-items: center;
@@ -315,29 +475,23 @@ a.hl:hover { background: linear-gradient(to top, var(--ink-accent-soft) 92%, tra
   background: color-mix(in srgb, var(--paper-deep) 85%, transparent);
   backdrop-filter: blur(6px);
 }
-.ink-label {
-  font-family: var(--font-mono);
-  font-size: 0.6rem;
-  letter-spacing: 0.14em;
-  color: var(--ink-faint);
-}
-.ink-drops { display: flex; gap: 0.4rem; }
-.ink-drop {
-  width: 0.95rem;
-  height: 0.95rem;
-  border-radius: 50% 50% 50% 0;
-  transform: rotate(-45deg);
-  background: var(--drop);
+.palette-label { font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.14em; color: var(--ink-faint); }
+.palette-chips { display: flex; gap: 0.4rem; }
+.chip {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 4px;
+  background: var(--chip);
   border: 1.5px solid transparent;
-  transition: transform 0.25s var(--ease);
+  transition: transform 0.25s var(--spring);
 }
-.ink-drop:hover { transform: rotate(-45deg) scale(1.2); }
-.ink-drop.active { border-color: var(--paper); outline: 1.5px solid var(--ink-accent); }
+.chip:hover { transform: scale(1.25) rotate(6deg); }
+.chip.active { border-color: var(--paper); outline: 1.5px solid var(--ink); }
 
 /* --------------------------------- footer -------------------------------- */
 
 .footer {
-  max-width: 44rem;
+  max-width: 46rem;
   margin: 0 auto;
   padding: 2rem 1.5rem 6rem;
   display: flex;
@@ -357,5 +511,7 @@ a.hl:hover { background: linear-gradient(to top, var(--ink-accent-soft) 92%, tra
   .name-ink { animation: none; clip-path: inset(-20% -8% -20% 0); }
   .nib { animation: none; opacity: 0; }
   .doodle .dpath { stroke-dasharray: none; stroke-dashoffset: 0; transition: none; }
-  .icon-link, .button, .ink-drop { transition: none; }
+  .island, .island-expanded, .chip, .icon-link, .button, .sd-dot, .sd-label { transition: none; }
+  .marquee.scrolling span { animation: none; }
+  .island.playing .island-dot { animation: none; }
 }
