@@ -10,6 +10,22 @@
 
   var root = document.documentElement;
 
+  /* ------------------------- name types itself ------------------------- */
+  (function () {
+    var typed = document.getElementById("typed");
+    if (!typed) return;
+    var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (root.classList.contains("skip-intro") || reduced) return;
+    var full = typed.textContent;
+    typed.textContent = "";
+    var i = 0;
+    var timer = setInterval(function () {
+      i += 1;
+      typed.textContent = full.slice(0, i);
+      if (i >= full.length) clearInterval(timer);
+    }, 95);
+  })();
+
   /* ============================ palette dock ============================ */
   var chips = document.querySelectorAll(".chip");
 
