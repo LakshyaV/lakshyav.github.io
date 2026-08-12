@@ -230,21 +230,22 @@
     // old wrist-based metric which was unreliable at different hand distances.
     PINCH_ON: 0.45, // engage below this
     PINCH_OFF: 0.62, // release above this (hysteresis) — lower so release always registers
-    WRIST_SMOOTH: 0.35, // EMA on the wrist position → jitter-free scroll
-    // Scroll is a JOYSTICK on the smoothed wrist offset from where you pinched;
-    // a small held offset scrolls a whole page. Velocity is eased and applied
-    // every animation frame (see loop) so it's smooth even though detection is
-    // only ~30fps.
-    SCROLL_DEADZONE: 0.03, // hold within this of the anchor = no scroll
-    SCROLL_SPEED: 900, // (offset − deadzone) → px/frame
-    SCROLL_MAX: 95, // px/frame cap
+    WRIST_SMOOTH: 0.45, // EMA on the wrist position → jitter-free but responsive
+    // Scroll is a JOYSTICK on the smoothed wrist offset from where you pinched.
+    // Sensitive by design: it starts the moment your hand moves (tiny deadzone)
+    // and reaches full speed with a SMALL movement, so you never have to swing
+    // your hand to the edge of frame. Velocity is eased and applied every
+    // animation frame (see loop) so it stays smooth despite ~30fps detection.
+    SCROLL_DEADZONE: 0.015, // start scrolling almost as soon as the hand moves
+    SCROLL_SPEED: 1500, // (offset − deadzone) → px/frame; hits max within ~6% of frame
+    SCROLL_MAX: 90, // px/frame cap
     SCROLL_DIR: -1, // -1 = swipe hand UP scrolls DOWN (grab/Vision-Pro feel)
-    SCROLL_EASE: 0.25, // per-frame easing toward target velocity
-    // A pinch is a CLICK unless it clearly became a scroll. Forgiving on both
-    // axes so ordinary hand drift during a tap doesn't eat the click — the old
-    // bug where any wrist movement suppressed every click.
-    CLICK_CANCEL_MOVE: 0.07, // wrist moved more than this (normalised) → it was a scroll
-    CLICK_MAX_MS: 550, // held longer than this → it was a scroll
+    SCROLL_EASE: 0.3, // per-frame easing toward target velocity
+    // A pinch is a CLICK unless it clearly became a scroll — a bigger, separate
+    // threshold from the scroll deadzone, so responsive scrolling doesn't
+    // re-suppress clicks (a small tap can nudge-scroll and still click).
+    CLICK_CANCEL_MOVE: 0.08, // wrist moved more than this → it was a scroll, no click
+    CLICK_MAX_MS: 600, // held longer than this → it was a scroll
     CLICK_DEBOUNCE_MS: 300,
   };
 
@@ -448,8 +449,10 @@
       if (pinching) {
         var offset = smoothWristY - anchorWristY;
         if (Math.abs(offset) > maxOffset) maxOffset = Math.abs(offset);
+        // Scroll responds immediately (small deadzone). Whether it counts as a
+        // scroll for click-cancellation is decided separately by maxOffset/time
+        // on release, so a responsive scroll never re-suppresses a tap-click.
         scrollTargetVel = gScrollVel(offset);
-        if (scrollTargetVel !== 0) didScroll = true;
         setStatus(
           scrollTargetVel < 0
             ? "scrolling up ↑ · esc to exit"
