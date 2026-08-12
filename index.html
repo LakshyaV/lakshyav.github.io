@@ -29,13 +29,13 @@
 
   <!-- ====================== ENTRY: pick a control mode ======================
        The whole site is about machines reading people, so the door offers to
-       be opened that way. Camera modes run entirely in-browser via pre-trained
-       models (MediaPipe hands, WebGazer eyes); no video leaves the device. -->
+       be opened that way. The hand mode runs entirely in-browser via a
+       pre-trained MediaPipe model; no video leaves the device. -->
   <div class="entry" id="entry" role="dialog" aria-modal="true" aria-label="Choose how to control the page">
     <div class="entry-card">
       <p class="entry-eyebrow">before you scroll</p>
       <h2 class="entry-title">how do you want to <em>control</em> this page?</h2>
-      <p class="entry-sub">i build interfaces that read people. try one on your way in — or just use your trackpad.</p>
+      <p class="entry-sub">i build interfaces that read people. try controlling this page with your hand — or just use your trackpad.</p>
       <div class="entry-modes">
         <button class="mode" data-mode="trackpad">
           <span class="mode-icon" aria-hidden="true">🖱️</span>
@@ -45,17 +45,11 @@
         <button class="mode" data-mode="gesture">
           <span class="mode-icon" aria-hidden="true">✋</span>
           <span class="mode-name">hand gestures</span>
-          <span class="mode-desc">a skeleton tracks your hand · pinch-drag to scroll, pinch to click</span>
-          <span class="mode-cam">needs camera</span>
-        </button>
-        <button class="mode" data-mode="gaze">
-          <span class="mode-icon" aria-hidden="true">👁️</span>
-          <span class="mode-name">your eyes</span>
-          <span class="mode-desc">look at 9 dots to calibrate, then your eyes move a cursor · hard blink clicks</span>
+          <span class="mode-desc">your fingertip is the cursor · pinch to click, pinch + move your hand to scroll</span>
           <span class="mode-cam">needs camera</span>
         </button>
       </div>
-      <p class="entry-privacy">camera modes run entirely in your browser. no video is uploaded or stored — it never leaves your device.</p>
+      <p class="entry-privacy">the camera mode runs entirely in your browser. no video is uploaded or stored — it never leaves your device.</p>
     </div>
   </div>
 
