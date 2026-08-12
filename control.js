@@ -125,13 +125,14 @@
     }, 520);
   }
 
-  // Click the real DOM element under (x,y). The overlay + cursor are
-  // pointer-events:none, so elementFromPoint already ignores them.
+  // Click the real DOM element under (x,y). The overlay + cursor are drawn on a
+  // pointer-events:none canvas, so elementFromPoint returns the true element.
   function clickAt(x, y) {
     spawnRipple(x, y);
     var el = document.elementFromPoint(x, y);
     if (!el) return;
-    ["pointerdown", "mousedown", "mouseup", "click"].forEach(function (type) {
+    // Fire pointer/mouse events for anything listening to them...
+    ["pointerdown", "mousedown", "pointerup", "mouseup"].forEach(function (type) {
       el.dispatchEvent(
         new MouseEvent(type, { bubbles: true, cancelable: true, clientX: x, clientY: y, view: window })
       );
@@ -139,6 +140,10 @@
     try {
       if (el.focus) el.focus();
     } catch (_) {}
+    // ...then the native click, which reliably navigates links, submits, and
+    // triggers onclick handlers (bubbles up from a child to its <a>/<button>).
+    if (typeof el.click === "function") el.click();
+    else el.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, clientX: x, clientY: y, view: window }));
   }
 
   function teardown() {
@@ -195,9 +200,9 @@
     // (in raw normalised units) above/below where you pinched sets a continuous
     // scroll speed. So a small held offset scrolls a whole page — displacement
     // dragging couldn't, since it's capped by how far your hand can travel.
-    SCROLL_DEADZONE: 0.04, // hold within this of the anchor = no scroll (lets you click)
-    SCROLL_SPEED: 330, // (offset − deadzone) → px/frame; wider band = smoother control
-    SCROLL_MAX: 46, // px/frame cap
+    SCROLL_DEADZONE: 0.035, // hold within this of the anchor = no scroll (lets you click)
+    SCROLL_SPEED: 700, // (offset − deadzone) → px/frame; wider band = smoother control
+    SCROLL_MAX: 75, // px/frame cap
     SCROLL_DIR: 1, // 1 = hand down scrolls down (joystick); -1 to invert
     CLICK_DEBOUNCE_MS: 350,
   };
@@ -245,6 +250,7 @@
     pinchRatio: gPinchRatio,
     scrollDelta: gScrollDelta,
     scrollVel: gScrollVel,
+    clickAt: clickAt,
     G: G,
   };
 
@@ -300,7 +306,11 @@
       cy = window.innerHeight * 0.5,
       haveCursor = false;
     var pinching = false,
-      anchorHandY = 0, // raw normalised hand-Y where the pinch began
+      anchorWristY = 0, // raw normalised WRIST-Y where the pinch began (stable
+      // during a pinch, unlike the fingertip which moves toward the thumb — that
+      // false-triggered scroll and suppressed every click)
+      clickX = 0,
+      clickY = 0, // cursor aim captured at pinch-start, before the fingertip drifts
       scrolled = false, // did this pinch move the page? (then it's not a click)
       lastClickT = 0;
 
@@ -359,17 +369,20 @@
       }
 
       var ratio = gPinchRatio(lms);
-      var handY = lms[8].y; // raw normalised, for the scroll joystick
+      var wristY = lms[0].y; // raw normalised WRIST-Y — stable during a pinch
 
       if (!pinching && ratio < G.PINCH_ON) {
-        // pinch begins — anchor here; decide click vs scroll on what follows
+        // pinch begins — anchor the joystick to the wrist, and remember where
+        // the cursor was aiming BEFORE the fingertip drifts toward the thumb
         pinching = true;
-        anchorHandY = handY;
+        anchorWristY = wristY;
+        clickX = cx;
+        clickY = cy;
         scrolled = false;
       } else if (pinching && ratio > G.PINCH_OFF) {
-        // pinch released — a pinch that never scrolled is a CLICK
+        // pinch released — a pinch that never scrolled is a CLICK, at the aim
         if (!scrolled && now - lastClickT > G.CLICK_DEBOUNCE_MS) {
-          clickAt(cx, cy);
+          clickAt(clickX, clickY);
           lastClickT = now;
         }
         pinching = false;
@@ -378,7 +391,7 @@
       // Cursor is drawn on the canvas at the fingertip (see drawSkeleton), so
       // no separate DOM dot here — the hand itself is the pointer.
       if (pinching) {
-        var vel = gScrollVel(handY - anchorHandY); // joystick: offset → speed
+        var vel = gScrollVel(wristY - anchorWristY); // joystick: whole-hand offset
         if (vel !== 0) {
           scrolled = true;
           window.scrollBy(0, vel);
@@ -387,7 +400,7 @@
           setStatus("hold to scroll · release to click · esc to exit", true);
         }
       } else {
-        setStatus("move your hand · pinch to click · hold + move to scroll · esc to exit", true);
+        setStatus("move your hand · pinch to click · pinch + move hand to scroll · esc to exit", true);
       }
     }
 
