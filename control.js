@@ -191,12 +191,25 @@
     // old wrist-based metric which was unreliable at different hand distances.
     PINCH_ON: 0.5, // engage below this
     PINCH_OFF: 0.72, // release above this (hysteresis)
-    DRAG_THRESH_PX: 26, // move past this during a pinch → drag, not tap
-    TAP_MAX_MS: 400,
-    SCROLL_GAIN: 3.4, // scroll speed while pinch-dragging
-    SCROLL_DEADZONE: 0.3,
-    CLICK_DEBOUNCE_MS: 400,
+    // Scroll is a JOYSTICK, not a drag: while pinched, how far your hand sits
+    // (in raw normalised units) above/below where you pinched sets a continuous
+    // scroll speed. So a small held offset scrolls a whole page — displacement
+    // dragging couldn't, since it's capped by how far your hand can travel.
+    SCROLL_DEADZONE: 0.04, // hold within this of the anchor = no scroll (lets you click)
+    SCROLL_SPEED: 330, // (offset − deadzone) → px/frame; wider band = smoother control
+    SCROLL_MAX: 46, // px/frame cap
+    SCROLL_DIR: 1, // 1 = hand down scrolls down (joystick); -1 to invert
+    CLICK_DEBOUNCE_MS: 350,
   };
+
+  // Joystick scroll velocity from the hand's vertical offset from the pinch
+  // anchor (raw normalised units). Exposed for tests.
+  function gScrollVel(offset) {
+    var mag = Math.abs(offset) - G.SCROLL_DEADZONE;
+    if (mag <= 0) return 0;
+    var v = G.SCROLL_DIR * (offset < 0 ? -1 : 1) * Math.min(mag * G.SCROLL_SPEED, G.SCROLL_MAX);
+    return v;
+  }
 
   // Pure mapping/pinch helpers — exposed for automated tests (no camera needed).
   function clamp01(v) {
@@ -231,6 +244,7 @@
     mapCursor: gMapCursor,
     pinchRatio: gPinchRatio,
     scrollDelta: gScrollDelta,
+    scrollVel: gScrollVel,
     G: G,
   };
 
@@ -286,12 +300,8 @@
       cy = window.innerHeight * 0.5,
       haveCursor = false;
     var pinching = false,
-      pinchStartX = 0,
-      pinchStartY = 0,
-      pinchStartT = 0,
-      isDrag = false,
-      clickedThisPinch = false,
-      lastScrollY = 0,
+      anchorHandY = 0, // raw normalised hand-Y where the pinch began
+      scrolled = false, // did this pinch move the page? (then it's not a click)
       lastClickT = 0;
 
     // The hand IS the cursor: the skeleton is drawn at true size translated so
@@ -349,21 +359,18 @@
       }
 
       var ratio = gPinchRatio(lms);
+      var handY = lms[8].y; // raw normalised, for the scroll joystick
 
       if (!pinching && ratio < G.PINCH_ON) {
+        // pinch begins — anchor here; decide click vs scroll on what follows
         pinching = true;
-        pinchStartX = cx;
-        pinchStartY = cy;
-        pinchStartT = now;
-        isDrag = false;
-        clickedThisPinch = false;
-        lastScrollY = cy;
+        anchorHandY = handY;
+        scrolled = false;
       } else if (pinching && ratio > G.PINCH_OFF) {
-        var dur = now - pinchStartT;
-        if (!isDrag && !clickedThisPinch && dur <= G.TAP_MAX_MS && now - lastClickT > G.CLICK_DEBOUNCE_MS) {
+        // pinch released — a pinch that never scrolled is a CLICK
+        if (!scrolled && now - lastClickT > G.CLICK_DEBOUNCE_MS) {
           clickAt(cx, cy);
           lastClickT = now;
-          clickedThisPinch = true;
         }
         pinching = false;
       }
@@ -371,15 +378,16 @@
       // Cursor is drawn on the canvas at the fingertip (see drawSkeleton), so
       // no separate DOM dot here — the hand itself is the pointer.
       if (pinching) {
-        if (Math.hypot(cx - pinchStartX, cy - pinchStartY) > G.DRAG_THRESH_PX) isDrag = true;
-        if (isDrag) {
-          var dY = cy - lastScrollY;
-          if (Math.abs(dY) > G.SCROLL_DEADZONE) window.scrollBy(0, -dY * G.SCROLL_GAIN);
-          lastScrollY = cy;
+        var vel = gScrollVel(handY - anchorHandY); // joystick: offset → speed
+        if (vel !== 0) {
+          scrolled = true;
+          window.scrollBy(0, vel);
+          setStatus((vel < 0 ? "scrolling up ↑" : "scrolling down ↓") + " · esc to exit", true);
+        } else {
+          setStatus("hold to scroll · release to click · esc to exit", true);
         }
-        setStatus(isDrag ? "scrolling…" : "pinch · esc to exit", true);
       } else {
-        setStatus("move your hand · pinch to click · pinch-drag to scroll · esc to exit", true);
+        setStatus("move your hand · pinch to click · hold + move to scroll · esc to exit", true);
       }
     }
 
