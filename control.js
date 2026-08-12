@@ -129,7 +129,15 @@
     spawnRipple(x, y);
     var el = document.elementFromPoint(x, y);
     if (!el) return;
-    // Fire pointer/mouse events for anything listening to them...
+    // Links: a synthetic click can't open target=_blank — that needs a trusted
+    // user gesture, and a pinch isn't one, so the browser popup-blocks it (this
+    // is why "clicking links didn't work at all"). Navigate directly instead.
+    var a = el.closest ? el.closest("a[href]") : null;
+    if (a && a.href) {
+      window.location.href = a.href; // same tab, always allowed
+      return;
+    }
+    // Everything else (buttons, toggles, chips): fire pointer/mouse events...
     ["pointerdown", "mousedown", "pointerup", "mouseup"].forEach(function (type) {
       el.dispatchEvent(
         new MouseEvent(type, { bubbles: true, cancelable: true, clientX: x, clientY: y, view: window })
@@ -199,9 +207,9 @@
     // scroll speed. So a small held offset scrolls a whole page — displacement
     // dragging couldn't, since it's capped by how far your hand can travel.
     SCROLL_DEADZONE: 0.035, // hold within this of the anchor = no scroll (lets you click)
-    SCROLL_SPEED: 700, // (offset − deadzone) → px/frame; wider band = smoother control
-    SCROLL_MAX: 75, // px/frame cap
-    SCROLL_DIR: 1, // 1 = hand down scrolls down (joystick); -1 to invert
+    SCROLL_SPEED: 900, // (offset − deadzone) → px/frame; wider band = smoother control
+    SCROLL_MAX: 95, // px/frame cap
+    SCROLL_DIR: -1, // -1 = swipe hand UP scrolls DOWN (grab/Vision-Pro feel)
     CLICK_DEBOUNCE_MS: 350,
   };
 
