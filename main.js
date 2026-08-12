@@ -122,12 +122,15 @@
     });
 
   /* ============================ dynamic island ===========================
-     Compact, it draws your signal. Open, it plays music. Swap TRACKS for
-     your own files or hosted mp3s; art is generated so nothing is owed. */
+     Compact, it draws your signal and a live status. Hover (or tap) and it
+     blooms into a music player. Tracks are hosted in /music, so they are
+     same-origin — which is what lets the visualizer read the real audio
+     spectrum instead of faking it. To change the playlist, drop mp3s in
+     /music and edit this array. Music is royalty-free (soundhelix). */
   var TRACKS = [
-    { title: "song one", artist: "soundhelix, placeholder", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3", hue: 28 },
-    { title: "song four", artist: "soundhelix, placeholder", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3", hue: 208 },
-    { title: "song eight", artist: "soundhelix, placeholder", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3", hue: 130 },
+    { title: "night shift", artist: "royalty-free · soundhelix", src: "music/track-1.mp3", hue: 212 },
+    { title: "signal drift", artist: "royalty-free · soundhelix", src: "music/track-3.mp3", hue: 150 },
+    { title: "deep work", artist: "royalty-free · soundhelix", src: "music/track-8.mp3", hue: 30 },
   ];
 
   var island = document.getElementById("island");
@@ -144,13 +147,15 @@
   var titleEl = document.getElementById("track-title");
   var artistEl = document.getElementById("track-artist");
   var artCanvas = document.getElementById("art-canvas");
+  var artWrap = document.querySelector(".island-art");
   var viz = document.getElementById("viz");
 
   var trackIndex = 0;
   var seeking = false;
+  var curHue = TRACKS[0].hue;
 
   // visualizer bars
-  var BAR_COUNT = 14;
+  var BAR_COUNT = 18;
   for (var i = 0; i < BAR_COUNT; i++) viz.appendChild(document.createElement("i"));
   var bars = viz.children;
 
@@ -162,6 +167,7 @@
   }
 
   function drawArt(hue) {
+    curHue = hue;
     var c = artCanvas.getContext("2d");
     var g = c.createLinearGradient(0, 0, 96, 96);
     g.addColorStop(0, "hsl(" + hue + ", 62%, 62%)");
@@ -180,6 +186,15 @@
     c.stroke();
   }
 
+  // Only marquee text that genuinely overflows. Must be measured while the
+  // island is open, or clientWidth is 0 and everything looks like it overflows.
+  function updateMarquee() {
+    [titleEl.parentElement, artistEl.parentElement].forEach(function (m) {
+      var overflow = m.clientWidth > 0 && m.firstElementChild.scrollWidth > m.clientWidth + 4;
+      m.classList.toggle("scrolling", overflow);
+    });
+  }
+
   function loadTrack(index, andPlay) {
     trackIndex = (index + TRACKS.length) % TRACKS.length;
     var t = TRACKS[trackIndex];
@@ -187,9 +202,7 @@
     titleEl.textContent = t.title;
     artistEl.textContent = t.artist;
     drawArt(t.hue);
-    [titleEl.parentElement, artistEl.parentElement].forEach(function (m) {
-      m.classList.toggle("scrolling", m.firstElementChild.scrollWidth > m.clientWidth);
-    });
+    updateMarquee();
     if (andPlay) audio.play().catch(function () {});
   }
 
@@ -200,9 +213,30 @@
     btnPlay.setAttribute("aria-label", playing ? "Pause" : "Play");
   }
 
-  compact.addEventListener("click", function () {
-    island.classList.toggle("open");
-  });
+  // Desktop opens on hover; touch (no hover) opens on tap. A small close
+  // delay keeps it from snapping shut while the pointer crosses a gap.
+  var hoverCapable = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+  var closeTimer = null;
+  function openIsland() {
+    clearTimeout(closeTimer);
+    island.classList.add("open");
+    requestAnimationFrame(updateMarquee); // now that widths are real
+  }
+  function closeSoon() {
+    clearTimeout(closeTimer);
+    closeTimer = setTimeout(function () {
+      island.classList.remove("open");
+    }, 260);
+  }
+  if (hoverCapable) {
+    island.addEventListener("mouseenter", openIsland);
+    island.addEventListener("mouseleave", closeSoon);
+  } else {
+    compact.addEventListener("click", function () {
+      island.classList.toggle("open");
+      if (island.classList.contains("open")) requestAnimationFrame(updateMarquee);
+    });
+  }
   document.addEventListener("click", function (e) {
     if (island.classList.contains("open") && !island.contains(e.target)) {
       island.classList.remove("open");
@@ -247,7 +281,7 @@
     seeking = false;
   });
 
-  drawArt(TRACKS[0].hue);
+  loadTrack(0, false); // show the first track ready, no download until play
 
   /* --- visualizer: real spectrum if CORS allows, synthetic otherwise --- */
   var analyser = null;
@@ -271,9 +305,10 @@
     try {
       var AC = window.AudioContext || window.webkitAudioContext;
       var ctx2 = new AC();
+      if (ctx2.state === "suspended") ctx2.resume();
       var srcNode = ctx2.createMediaElementSource(audio);
       analyser = ctx2.createAnalyser();
-      analyser.fftSize = 64;
+      analyser.fftSize = 128;
       srcNode.connect(analyser);
       analyser.connect(ctx2.destination);
       freq = new Uint8Array(analyser.frequencyBinCount);
@@ -283,29 +318,113 @@
   }
 
   var zeroFrames = 0;
+  var glow = 0;
   function vizFrame(t) {
     var playing = !audio.paused && audio.src;
     var level;
+    var real = false;
     if (playing && analyser && !analyserDead) {
       analyser.getByteFrequencyData(freq);
       var sum = 0;
       for (var i = 0; i < freq.length; i++) sum += freq[i];
       if (sum === 0) {
         zeroFrames += 1;
-        if (zeroFrames > 90) analyserDead = true; // CORS-tainted, fall back
-      } else zeroFrames = 0;
+        if (zeroFrames > 90) analyserDead = true; // tainted, fall back
+      } else {
+        zeroFrames = 0;
+        real = true;
+      }
     }
     for (var b = 0; b < BAR_COUNT; b++) {
-      if (playing && analyser && !analyserDead && zeroFrames === 0) {
-        level = freq[Math.floor((b / BAR_COUNT) * freq.length)] / 255;
+      if (real) {
+        // skip the very lowest bins (mostly DC) for a livelier spread
+        level = freq[2 + Math.floor((b / BAR_COUNT) * (freq.length - 4))] / 255;
       } else if (playing) {
         level = 0.25 + 0.75 * Math.abs(Math.sin(t / 260 + b * 0.9) * Math.sin(t / 730 + b));
       } else {
         level = 0.08;
       }
-      bars[b].style.height = Math.max(2, level * 12) + "px";
+      bars[b].style.height = Math.max(2, level * 15) + "px";
+    }
+
+    // album art glows and breathes with the low end
+    var target = 0;
+    if (real) target = (freq[1] + freq[2] + freq[3] + freq[4]) / (4 * 255);
+    else if (playing) target = 0.35 + 0.25 * Math.abs(Math.sin(t / 300));
+    glow += (target - glow) * 0.2;
+    if (artWrap) {
+      if (playing) {
+        artWrap.style.boxShadow =
+          "0 2px 10px rgba(0,0,0,0.4), 0 0 " +
+          (8 + glow * 30) +
+          "px hsla(" + curHue + ", 72%, 60%, " + (0.28 + glow * 0.5) + ")";
+        artWrap.style.transform = "scale(" + (1 + glow * 0.05) + ")";
+      } else {
+        artWrap.style.boxShadow = "";
+        artWrap.style.transform = "";
+      }
     }
   }
+
+  /* ==================== live status: clock + github pulse ================
+     The island earns its keep even before you play anything: a live clock
+     in Ontario next to a real github pulse, so a visitor can see he is
+     probably up at 2am shipping. */
+  var statLocal = document.getElementById("stat-local");
+  var statGh = document.getElementById("stat-gh");
+
+  function relTime(date) {
+    var s = Math.floor((Date.now() - date.getTime()) / 1000);
+    if (s < 60) return "just now";
+    var m = Math.floor(s / 60);
+    if (m < 60) return m + "m ago";
+    var h = Math.floor(m / 60);
+    if (h < 24) return h + "h ago";
+    return Math.floor(h / 24) + "d ago";
+  }
+
+  function updateClock() {
+    if (!statLocal) return;
+    try {
+      var time = new Date()
+        .toLocaleTimeString("en-US", { timeZone: "America/Toronto", hour: "numeric", minute: "2-digit" })
+        .toLowerCase()
+        .replace(" ", "");
+      statLocal.textContent = "building origin · " + time + " ET";
+    } catch (_) {
+      statLocal.textContent = "building origin";
+    }
+  }
+  updateClock();
+  setInterval(updateClock, 20000);
+
+  fetch("https://api.github.com/users/LakshyaV/events/public?per_page=100")
+    .then(function (r) {
+      if (!r.ok) throw new Error("status " + r.status);
+      return r.json();
+    })
+    .then(function (events) {
+      var pushes = events.filter(function (e) {
+        return e.type === "PushEvent";
+      });
+      var todayStr = new Date().toDateString();
+      var commitsToday = pushes.reduce(function (n, e) {
+        if (new Date(e.created_at).toDateString() !== todayStr) return n;
+        return n + (e.payload && e.payload.commits ? e.payload.commits.length : 0);
+      }, 0);
+      if (statGh) {
+        statGh.textContent = pushes.length
+          ? "pushed " + relTime(new Date(pushes[0].created_at)) + (commitsToday ? " · " + commitsToday + " today" : "")
+          : "github ↗";
+      }
+      var footnote = document.querySelector(".gh-footnote");
+      if (footnote && commitsToday > 0) {
+        footnote.textContent = footnote.textContent + " · " + commitsToday + " today";
+      }
+    })
+    .catch(function () {
+      if (statGh) statGh.textContent = "github ↗";
+    });
 
   /* ------------------------------ your signal --------------------------- */
   var canvas = document.getElementById("signal-canvas");

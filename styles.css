@@ -224,14 +224,33 @@ button { font: inherit; background: none; border: none; color: inherit; cursor: 
 #seek::-webkit-slider-thumb { appearance: none; width: 11px; height: 11px; border-radius: 50%; background: var(--island-ink); }
 #seek::-moz-range-thumb { width: 11px; height: 11px; border: none; border-radius: 50%; background: var(--island-ink); }
 
-.island-note {
-  margin-top: 0.6rem;
+.island-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin-top: 0.7rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
   font-family: var(--font-mono);
-  font-size: 0.58rem;
-  letter-spacing: 0.04em;
-  opacity: 0.45;
-  text-align: center;
+  font-size: 0.56rem;
+  letter-spacing: 0.05em;
+  color: color-mix(in srgb, var(--island-ink) 58%, transparent);
 }
+.island-status .stat { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.island-status .stat:last-child { flex: none; }
+.stat-live::before {
+  content: "";
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  margin-right: 0.4em;
+  border-radius: 50%;
+  background: #4ade80;
+  vertical-align: 0.05em;
+  animation: pulse 1.6s ease-in-out infinite;
+}
+.island-art { transition: box-shadow 0.12s linear; }
 
 html.no-js .island { display: none; }
 

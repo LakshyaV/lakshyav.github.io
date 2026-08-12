@@ -39,8 +39,8 @@
       <div class="island-top">
         <div class="island-art"><canvas id="art-canvas" width="96" height="96"></canvas></div>
         <div class="island-meta">
-          <div class="marquee"><span id="track-title">pick a track</span></div>
-          <div class="marquee sub"><span id="track-artist">placeholder tunes, swap in yours</span></div>
+          <div class="marquee"><span id="track-title">night shift</span></div>
+          <div class="marquee sub"><span id="track-artist">royalty-free · soundhelix</span></div>
           <div class="viz" id="viz" aria-hidden="true"></div>
         </div>
         <div class="island-controls">
@@ -61,7 +61,10 @@
         <input type="range" id="seek" min="0" max="1000" value="0" aria-label="Seek" />
         <span class="ptime" id="dur-time">0:00</span>
       </div>
-      <p class="island-note">your signal keeps drawing underneath. this is just the b side.</p>
+      <div class="island-status">
+        <span class="stat stat-live" id="stat-local">building origin</span>
+        <span class="stat" id="stat-gh">github ·</span>
+      </div>
     </div>
   </div>
 
