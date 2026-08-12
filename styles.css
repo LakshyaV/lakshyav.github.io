@@ -1,0 +1,361 @@
+/* =========================================================================
+   paper & ink — a warm sheet of paper, one pen, and a site that listens.
+   Ink themes swap --ink-accent; paper themes swap the sheet itself.
+   ========================================================================= */
+
+:root {
+  --paper: #f6f1e7;
+  --paper-deep: #ece5d6;
+  --ink: #221c15;
+  --ink-soft: #55493c;
+  --ink-faint: #97897a;
+  --rule: #ded4c0;
+
+  --ink-accent: #26201a;
+  --ink-accent-soft: rgba(38, 32, 26, 0.16);
+
+  --font-body: "Space Grotesk", system-ui, sans-serif;
+  --font-hand: "Caveat", cursive;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+:root[data-ink="blue"]   { --ink-accent: #2a4b8a; --ink-accent-soft: rgba(42, 75, 138, 0.16); }
+:root[data-ink="red"]    { --ink-accent: #a03a2a; --ink-accent-soft: rgba(160, 58, 42, 0.15); }
+:root[data-ink="green"]  { --ink-accent: #3a6b4a; --ink-accent-soft: rgba(58, 107, 74, 0.16); }
+:root[data-ink="purple"] { --ink-accent: #5b4a8a; --ink-accent-soft: rgba(91, 74, 138, 0.16); }
+
+:root[data-paper="dark"] {
+  --paper: #16120c;
+  --paper-deep: #1f1a12;
+  --ink: #efe8da;
+  --ink-soft: #bfb3a0;
+  --ink-faint: #7d7263;
+  --rule: #2e2718;
+}
+
+:root[data-paper="dark"][data-ink="black"], :root[data-paper="dark"]:not([data-ink]) {
+  --ink-accent: #efe8da;
+  --ink-accent-soft: rgba(239, 232, 218, 0.14);
+}
+:root[data-paper="dark"][data-ink="blue"]   { --ink-accent: #7f9fd8; --ink-accent-soft: rgba(127, 159, 216, 0.16); }
+:root[data-paper="dark"][data-ink="red"]    { --ink-accent: #d8836f; --ink-accent-soft: rgba(216, 131, 111, 0.16); }
+:root[data-paper="dark"][data-ink="green"]  { --ink-accent: #8ab89a; --ink-accent-soft: rgba(138, 184, 154, 0.16); }
+:root[data-paper="dark"][data-ink="purple"] { --ink-accent: #a793d8; --ink-accent-soft: rgba(167, 147, 216, 0.16); }
+
+/* ---------------------------------- base --------------------------------- */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { overflow-x: clip; scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--paper);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 0.45s, color 0.45s;
+  min-height: 100vh;
+}
+
+::selection { background: var(--ink-accent-soft); }
+
+a { color: inherit; text-decoration: none; }
+button { font: inherit; background: none; border: none; color: inherit; cursor: pointer; }
+
+:focus-visible { outline: 2px solid var(--ink-accent); outline-offset: 3px; border-radius: 2px; }
+
+/* -------------------------------- topbar --------------------------------- */
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: 1.1rem 1.5rem 0.6rem;
+  background: color-mix(in srgb, var(--paper) 88%, transparent);
+  backdrop-filter: blur(6px);
+}
+
+.brand {
+  font-family: var(--font-hand);
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--ink-accent);
+  transform: rotate(-4deg);
+}
+
+.topbar-icons { display: flex; gap: 0.35rem; }
+
+.icon-link {
+  display: grid;
+  place-items: center;
+  width: 2.15rem;
+  height: 2.15rem;
+  border-radius: 50%;
+  color: var(--ink-soft);
+  transition: color 0.25s, background-color 0.25s, transform 0.25s var(--ease);
+}
+.icon-link:hover { color: var(--ink-accent); background: var(--ink-accent-soft); transform: translateY(-1px); }
+.icon-link svg { width: 1.05rem; height: 1.05rem; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+
+/* --------------------------------- sheet --------------------------------- */
+
+.sheet {
+  position: relative;
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 5rem;
+}
+
+/* notebook margin rule on wide screens */
+@media (min-width: 60rem) {
+  .sheet::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: -2.25rem;
+    width: 1px;
+    background: var(--rule);
+  }
+}
+
+/* ---------------------------------- hero --------------------------------- */
+
+.hero { padding: 3.5rem 0 1rem; }
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  color: var(--ink-faint);
+}
+
+.name {
+  position: relative;
+  display: inline-block;
+  font-family: var(--font-hand);
+  font-weight: 700;
+  font-size: clamp(4.4rem, 14vw, 7.5rem);
+  line-height: 1;
+  color: var(--ink-accent);
+  margin-top: 0.5rem;
+  transform: rotate(-1.5deg);
+}
+
+/* the name writes itself, once per session */
+.name-ink {
+  display: inline-block;
+  clip-path: inset(-20% 100% -20% 0);
+  animation: write 1.5s var(--ease) 0.3s forwards;
+}
+.nib {
+  position: absolute;
+  bottom: 0.42em;
+  left: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 50% 50% 50% 0;
+  background: var(--ink-accent);
+  transform: rotate(-45deg);
+  opacity: 0;
+  animation: nib-move 1.5s var(--ease) 0.3s forwards;
+}
+@keyframes write { to { clip-path: inset(-20% -8% -20% 0); } }
+@keyframes nib-move {
+  0% { left: 2%; opacity: 1; }
+  92% { opacity: 1; }
+  100% { left: 99%; opacity: 0; }
+}
+
+html.skip-intro .name-ink { animation: none; clip-path: inset(-20% -8% -20% 0); }
+html.skip-intro .nib { animation: none; opacity: 0; }
+
+.tagline { margin-top: 1.4rem; font-size: 1.35rem; line-height: 1.5; max-width: 30ch; }
+
+.tagline-note {
+  margin-top: 0.9rem;
+  font-family: var(--font-hand);
+  font-size: 1.25rem;
+  color: var(--ink-faint);
+  transform: rotate(-1.2deg);
+}
+
+/* -------------------------------- blocks --------------------------------- */
+
+.block { padding: 2.4rem 0 0.4rem; }
+
+.block-label {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  color: var(--ink-faint);
+  margin-bottom: 1rem;
+}
+
+.lead { font-size: 1.1rem; line-height: 1.65; color: var(--ink-soft); max-width: 56ch; }
+.lead + .lead { margin-top: 0.8rem; }
+
+.list { list-style: none; max-width: 58ch; }
+.list li {
+  position: relative;
+  padding-left: 1.4rem;
+  margin-bottom: 0.85rem;
+  font-size: 1.02rem;
+  line-height: 1.62;
+  color: var(--ink-soft);
+}
+.list li::before {
+  content: "";
+  position: absolute;
+  left: 0.15rem;
+  top: 0.68em;
+  width: 6px;
+  height: 6px;
+  border-radius: 50% 50% 50% 0;
+  background: var(--ink-accent);
+  transform: rotate(-45deg);
+  opacity: 0.8;
+}
+
+/* highlighter-marker links and emphasis */
+.hl {
+  color: var(--ink);
+  font-weight: 500;
+  background: linear-gradient(to top, var(--ink-accent-soft) 38%, transparent 38%);
+  padding: 0 0.1em;
+  border-radius: 2px;
+  transition: background-color 0.25s;
+}
+a.hl:hover { background: linear-gradient(to top, var(--ink-accent-soft) 92%, transparent 92%); }
+.hl-strong { font-weight: 600; color: var(--ink-accent); }
+
+/* -------------------------------- doodles -------------------------------- */
+
+.doodle { display: block; margin-top: 1.6rem; color: var(--ink-accent); opacity: 0.85; }
+.doodle .dpath {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 600;
+  stroke-dashoffset: 600;
+  transition: stroke-dashoffset 1.6s var(--ease);
+}
+.doodle.drawn .dpath { stroke-dashoffset: 0; }
+.doodle-wave { width: min(16rem, 70%); }
+.doodle-glasses { width: 11rem; }
+.doodle-bot { width: 8.5rem; }
+
+/* -------------------------------- contact -------------------------------- */
+
+.contact { padding-bottom: 2rem; }
+.contact-row { display: flex; align-items: center; gap: 1.4rem; margin-top: 1.4rem; flex-wrap: wrap; }
+
+.button {
+  display: inline-block;
+  padding: 0.7rem 1.4rem;
+  border: 1.5px solid var(--ink-accent);
+  border-radius: 999px 999px 999px 4px;
+  color: var(--ink-accent);
+  font-weight: 500;
+  transition: background-color 0.25s, color 0.25s, transform 0.25s var(--ease);
+}
+.button:hover { background: var(--ink-accent); color: var(--paper); transform: translateY(-1px) rotate(-0.5deg); }
+
+/* ------------------------------ signal pill ------------------------------ */
+
+.signal-pill {
+  position: fixed;
+  top: 0.9rem;
+  right: 1rem;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  padding: 0.4rem 0.7rem 0.3rem;
+  border: 1px solid var(--rule);
+  border-radius: 1.2rem;
+  background: color-mix(in srgb, var(--paper-deep) 80%, transparent);
+  backdrop-filter: blur(6px);
+}
+.signal-pill canvas { display: block; width: 150px; height: 34px; }
+.signal-label {
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.14em;
+  color: var(--ink-faint);
+}
+
+@media (max-width: 46rem) {
+  .signal-pill { display: none; }
+}
+
+/* -------------------------------- ink dock ------------------------------- */
+
+.ink-dock {
+  position: fixed;
+  bottom: 1.1rem;
+  left: 1.1rem;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.45rem 0.75rem;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--paper-deep) 85%, transparent);
+  backdrop-filter: blur(6px);
+}
+.ink-label {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.14em;
+  color: var(--ink-faint);
+}
+.ink-drops { display: flex; gap: 0.4rem; }
+.ink-drop {
+  width: 0.95rem;
+  height: 0.95rem;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  background: var(--drop);
+  border: 1.5px solid transparent;
+  transition: transform 0.25s var(--ease);
+}
+.ink-drop:hover { transform: rotate(-45deg) scale(1.2); }
+.ink-drop.active { border-color: var(--paper); outline: 1.5px solid var(--ink-accent); }
+
+/* --------------------------------- footer -------------------------------- */
+
+.footer {
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 6rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  color: var(--ink-faint);
+}
+
+/* ---------------------------- reduced motion ----------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .name-ink { animation: none; clip-path: inset(-20% -8% -20% 0); }
+  .nib { animation: none; opacity: 0; }
+  .doodle .dpath { stroke-dasharray: none; stroke-dashoffset: 0; transition: none; }
+  .icon-link, .button, .ink-drop { transition: none; }
+}

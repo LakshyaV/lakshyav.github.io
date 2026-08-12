@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>lakshya v</title>
+  <meta name="description" content="i make machines understand people. software engineering @ uwaterloo, building origin." />
+  <meta name="theme-color" content="#f6f1e7" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="lakshya v" />
+  <meta property="og:description" content="i make machines understand people. software engineering @ uwaterloo, building origin." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23201a14'/%3E%3Ctext x='32' y='42' font-family='Georgia' font-style='italic' font-size='30' fill='%23f6f1e7' text-anchor='middle'%3Elv%3C/text%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=Caveat:wght@600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <script>
+    // Before paint: restore ink + paper, and skip the handwriting intro on
+    // return visits within the session.
+    try {
+      var ink = localStorage.getItem("ink");
+      if (ink) document.documentElement.setAttribute("data-ink", ink);
+      if (localStorage.getItem("paper") === "dark") document.documentElement.setAttribute("data-paper", "dark");
+      if (sessionStorage.getItem("intro-done") === "1") document.documentElement.classList.add("skip-intro");
+    } catch (_) {}
+  </script>
+</head>
+<body>
+
+  <!-- your signal — the site listens to the visitor. cursor and scroll energy
+       become a live trace, a tiny version of the whole thesis. -->
+  <div class="signal-pill" id="signal-pill" title="this is you. cursor and scroll, live.">
+    <canvas id="signal-canvas" width="150" height="34" aria-hidden="true"></canvas>
+    <span class="signal-label">your signal</span>
+  </div>
+
+  <header class="topbar">
+    <span class="brand" aria-hidden="true">lv</span>
+    <nav class="topbar-icons" aria-label="Links">
+      <a class="icon-link" href="https://github.com/LakshyaV" target="_blank" rel="noopener noreferrer" aria-label="GitHub" title="github">
+        <svg viewBox="0 0 24 24"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.9a3.4 3.4 0 0 0-.9-2.6c3.1-.4 6.4-1.5 6.4-7A5.4 5.4 0 0 0 20 4.8 5.1 5.1 0 0 0 19.9 1S18.7.7 16 2.5a13.4 13.4 0 0 0-7 0C6.3.7 5.1 1 5.1 1A5.1 5.1 0 0 0 5 4.8a5.4 5.4 0 0 0-1.5 3.7c0 5.4 3.3 6.6 6.4 7a3.4 3.4 0 0 0-.9 2.6V22"/></svg>
+      </a>
+      <a class="icon-link" href="https://www.linkedin.com/in/lakshyav/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" title="linkedin">
+        <svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="3"/><path d="M7 10v7M7 7v.5M12 17v-4a2 2 0 0 1 4 0v4M12 10v7"/></svg>
+      </a>
+      <a class="icon-link" href="mailto:lakyvasu22@gmail.com" aria-label="Email" title="email">
+        <svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="22,6 12,13 2,6"/></svg>
+      </a>
+      <button class="icon-link" id="paper-toggle" aria-label="Toggle dark paper" title="paper">
+        <svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg>
+      </button>
+    </nav>
+  </header>
+
+  <main class="sheet">
+
+    <!-- ------------------------------ hero ------------------------------ -->
+    <section class="hero">
+      <p class="eyebrow">hey, i'm</p>
+      <h1 class="name" aria-label="lakshya">
+        <span class="name-ink">lakshya</span>
+        <span class="nib" aria-hidden="true"></span>
+      </h1>
+      <p class="tagline">
+        i make machines <span class="hl">understand people</span>.
+      </p>
+      <p class="tagline-note" aria-hidden="true">without the keyboard, ideally &#8628;</p>
+
+      <svg class="doodle doodle-wave" viewBox="0 0 260 40" aria-hidden="true">
+        <path class="dpath" d="M4 22 C 20 22, 24 8, 34 20 S 52 34, 62 20 66 6 78 20 96 32 106 20 112 10 124 20 142 30 152 20 158 12 170 20 188 28 198 20 206 14 218 20 244 22 256 20" />
+      </svg>
+    </section>
+
+    <!-- ------------------------------ about ----------------------------- -->
+    <section class="block">
+      <p class="block-label">about</p>
+      <p class="lead">
+        i study <a class="hl" href="https://uwaterloo.ca/future-students/programs/software-engineering" target="_blank" rel="noopener noreferrer">software engineering at the university of waterloo</a>
+      </p>
+      <p class="lead">
+        and i'm building <span class="hl hl-strong">origin</span>, a way to talk to machines without talking.
+        sensors where glasses sit, models that recover the sentence you meant to say.
+      </p>
+      <svg class="doodle doodle-glasses" viewBox="0 0 200 60" aria-hidden="true">
+        <path class="dpath" d="M20 28 h14 m0 0 a16 12 0 1 0 32 2 a16 12 0 1 0 -32 -2 z m32 2 c4 -6 10 -6 14 0 m0 0 a16 12 0 1 0 32 -2 a16 12 0 1 0 -32 2 z m32 -2 h14" />
+        <circle class="dpath" cx="38" cy="18" r="1.6" />
+        <circle class="dpath" cx="128" cy="18" r="1.6" />
+        <path class="dpath" d="M158 22 c6 -4 10 -8 12 -14 m-6 16 c8 -2 12 -6 16 -12" />
+      </svg>
+    </section>
+
+    <!-- ---------------------------- currently ---------------------------- -->
+    <section class="block">
+      <p class="block-label">currently</p>
+      <ul class="list">
+        <li>decoding <span class="hl">intended speech</span> from the body's own signals. the keyboard is a bottleneck and i intend to remove it</li>
+        <li>first year, <a class="hl" href="https://uwaterloo.ca" target="_blank" rel="noopener noreferrer">uwaterloo</a> software engineering</li>
+      </ul>
+    </section>
+
+    <!-- --------------------------- what i've done ------------------------ -->
+    <section class="block">
+      <p class="block-label">what i've done</p>
+      <ul class="list">
+        <li>
+          machine learning research on surgical video at
+          <a class="hl" href="https://masseyeandear.org" target="_blank" rel="noopener noreferrer">mass eye and ear, harvard medical school</a>
+        </li>
+        <li>
+          an ai consulting project with <span class="hl">microsoft</span> at fifteen.
+          modelled data centre operations, found two billion dollars a year on the table
+        </li>
+        <li>
+          shipped medical documentation tools on <span class="hl">zebra</span> handhelds at sixteen,
+          learned to love a compute budget
+        </li>
+        <li>
+          talked my way into a real partnership with <span class="hl">interac</span> at seventeen.
+          a hundred thousand transactions, recommenders at 0.87 auc
+        </li>
+        <li>
+          built <span class="hl hl-strong">jaw2control</span>. said a sentence without making a sound
+          and the right device obeyed
+        </li>
+        <li>
+          <span class="hl">vex worlds</span> twice, provincial champions, software lead then captain
+        </li>
+        <li>top six nationally at hosa with a mind-controlled wheelchair</li>
+        <li>taught fifth graders to code when i was seven</li>
+      </ul>
+      <svg class="doodle doodle-bot" viewBox="0 0 140 80" aria-hidden="true">
+        <rect class="dpath" x="30" y="26" width="52" height="34" rx="4" />
+        <circle class="dpath" cx="44" cy="66" r="7" />
+        <circle class="dpath" cx="70" cy="66" r="7" />
+        <path class="dpath" d="M56 26 v-10 m0 0 h6" />
+        <circle class="dpath" cx="65" cy="16" r="2.4" />
+        <path class="dpath" d="M90 44 c14 -2 22 -10 26 -22" />
+        <path class="dpath" d="M112 30 l4 -8 l2 9" />
+      </svg>
+    </section>
+
+    <!-- ----------------------------- built fast -------------------------- -->
+    <section class="block">
+      <p class="block-label">built fast</p>
+      <ul class="list">
+        <li><span class="hl">vursor</span>, cursor for video editing. y combinator called, interviewed us out of 1500 builders, then passed. still stings</li>
+        <li><span class="hl">aicruiter</span>, interviews run end to end by an agent that answers in about a second</li>
+        <li><span class="hl">cheetcode</span>, an ai that beats the coding interview. mostly an argument about what the interview measures</li>
+      </ul>
+    </section>
+
+    <!-- ----------------------------- trying to --------------------------- -->
+    <section class="block">
+      <p class="block-label">trying to</p>
+      <ul class="list">
+        <li>make talking to a computer as private as thinking</li>
+        <li>meet people building strange interfaces</li>
+      </ul>
+    </section>
+
+    <!-- ------------------------------ contact ---------------------------- -->
+    <section class="block contact">
+      <p class="block-label">say something</p>
+      <p class="lead">i'm listening. that's sort of the whole point.</p>
+      <div class="contact-row">
+        <a class="button" href="mailto:lakyvasu22@gmail.com">email me</a>
+        <a class="hl" href="https://github.com/LakshyaV" target="_blank" rel="noopener noreferrer">github</a>
+        <a class="hl" href="https://www.linkedin.com/in/lakshyav/" target="_blank" rel="noopener noreferrer">linkedin</a>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ink dock — pick your pen -->
+  <div class="ink-dock" aria-label="Ink colour">
+    <span class="ink-label">ink</span>
+    <div class="ink-drops">
+      <button class="ink-drop" data-ink="black" style="--drop:#26201a" aria-label="Black ink" title="black"></button>
+      <button class="ink-drop" data-ink="blue" style="--drop:#2a4b8a" aria-label="Blue ink" title="pen blue"></button>
+      <button class="ink-drop" data-ink="red" style="--drop:#a03a2a" aria-label="Red ink" title="red"></button>
+      <button class="ink-drop" data-ink="green" style="--drop:#3a6b4a" aria-label="Green ink" title="green"></button>
+      <button class="ink-drop" data-ink="purple" style="--drop:#5b4a8a" aria-label="Purple ink" title="purple"></button>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <span>lakshya vasudeva</span>
+    <span class="footer-note">written by hand, read by machines</span>
+  </footer>
+
+  <script src="main.js"></script>
+</body>
+</html>
