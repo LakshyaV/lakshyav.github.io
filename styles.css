@@ -625,15 +625,75 @@ html.entry-done .entry { display: none; }
 }
 .hud-exit:hover { color: var(--island-ink); }
 
-/* WebGazer injects its own preview; keep it small and out of the way */
-#webgazerVideoContainer {
-  top: auto !important;
-  bottom: 90px !important;
-  left: 50% !important;
-  transform: translateX(-50%) !important;
-  opacity: 0.9;
-  border-radius: 10px;
-  overflow: hidden;
+/* -------------------- camera-mode cursor + overlays ---------------------- */
+
+.ctrl-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  pointer-events: none;
+}
+
+.ctrl-cursor {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 70;
+  width: 26px;
+  height: 26px;
+  margin: -13px 0 0 -13px;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
+  box-shadow: 0 0 14px var(--accent-soft), 0 1px 3px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+  will-change: transform;
+  transition: width 0.12s, height 0.12s, margin 0.12s, background-color 0.12s;
+}
+.ctrl-cursor[data-state="pinch"] {
+  width: 15px;
+  height: 15px;
+  margin: -7.5px 0 0 -7.5px;
+  background: var(--accent);
+}
+.ctrl-cursor[data-state="blink"] {
+  width: 42px;
+  height: 42px;
+  margin: -21px 0 0 -21px;
+  background: color-mix(in srgb, var(--accent) 42%, transparent);
+}
+
+.ctrl-ripple {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 69;
+  width: 14px;
+  height: 14px;
+  margin: -7px 0 0 -7px;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  pointer-events: none;
+  animation: ctrl-ripple 0.5s ease-out forwards;
+}
+@keyframes ctrl-ripple {
+  from { opacity: 0.8; }
+  to { transform: scale(4.5); opacity: 0; }
+}
+
+.gaze-dot {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  width: 22px;
+  height: 22px;
+  margin: -11px 0 0 -11px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 6px var(--accent-soft), 0 0 20px var(--accent);
+  z-index: 68;
+  pointer-events: none;
+  animation: pulse 1.4s ease-in-out infinite;
 }
 
 /* ---------------------------- reduced motion ----------------------------- */
