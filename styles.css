@@ -681,19 +681,23 @@ html.entry-done .entry { display: none; }
   to { transform: scale(4.5); opacity: 0; }
 }
 
+/* Calibration target. Position (left/top) and scale/opacity are driven by JS,
+   so no keyframe animation here — it would fight those. Transitions make the
+   dot glide smoothly from point to point. */
 .gaze-dot {
   position: fixed;
-  left: 50%;
-  top: 50%;
+  left: 0;
+  top: 0;
   width: 22px;
   height: 22px;
   margin: -11px 0 0 -11px;
   border-radius: 50%;
   background: var(--accent);
-  box-shadow: 0 0 0 6px var(--accent-soft), 0 0 20px var(--accent);
+  box-shadow: 0 0 0 5px var(--accent-soft), 0 0 22px var(--accent);
   z-index: 68;
   pointer-events: none;
-  animation: pulse 1.4s ease-in-out infinite;
+  opacity: 0;
+  transition: left 0.28s ease, top 0.28s ease, transform 0.15s ease, opacity 0.2s;
 }
 
 /* ---------------------------- reduced motion ----------------------------- */
