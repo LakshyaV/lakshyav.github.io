@@ -129,6 +129,43 @@
 
       if (fallback) fallback.remove();
 
+      // classic green squares (GitHub's own colours, fixed — the recognisable
+      // look), the same 30 days padded to whole weeks and centred.
+      var sqWrap = document.getElementById("gh-squares");
+      if (sqWrap) {
+        var padded = recent.slice();
+        var firstIdx = all.length - recent.length;
+        while (padded.length && new Date(padded[0].date + "T00:00:00").getDay() !== 0 && firstIdx > 0) {
+          firstIdx--;
+          padded.unshift(all[firstIdx]);
+        }
+        var wk = null,
+          firstW = true;
+        padded.forEach(function (day) {
+          var dow = new Date(day.date + "T00:00:00").getDay();
+          if (!wk || dow === 0) {
+            wk = document.createElement("div");
+            wk.className = "gh-sq-week";
+            sqWrap.appendChild(wk);
+            if (firstW && dow !== 0) {
+              for (var s = 0; s < dow; s++) {
+                var sp = document.createElement("span");
+                sp.className = "gh-sq gh-sq-pad";
+                wk.appendChild(sp);
+              }
+            }
+            firstW = false;
+          }
+          var sq = document.createElement("span");
+          sq.className = "gh-sq";
+          sq.setAttribute("data-level", String(day.level));
+          if (new Date(day.date + "T00:00:00").toDateString() === todayStr) sq.classList.add("today");
+          sq.title = fmtDate(day.date) + " · " + day.count + (day.count === 1 ? " contribution" : " contributions");
+          wk.appendChild(sq);
+        });
+        document.getElementById("gh-squares-block").hidden = false;
+      }
+
       if (totalEl) {
         totalEl.innerHTML =
           "<b>" + monthTotal + "</b> contribution" + (monthTotal === 1 ? "" : "s") + " this month";
@@ -496,6 +533,16 @@
     { passive: true }
   );
 
+  // The signal trace uses the island's ink colour, so it stays visible whether
+  // the island is dark (light mode) or light (dark mode).
+  function islandInk() {
+    return getComputedStyle(document.documentElement).getPropertyValue("--island-ink").trim() || "#f2f2ee";
+  }
+  var sigColor = islandInk();
+  new MutationObserver(function () {
+    sigColor = islandInk();
+  }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-paper", "data-theme"] });
+
   function frame(ts) {
     requestAnimationFrame(frame);
     t += 1;
@@ -514,9 +561,11 @@
       if (i === 0) sctx.moveTo(i, y);
       else sctx.lineTo(i, y);
     }
-    sctx.strokeStyle = "rgba(243, 234, 217, 0.95)";
+    sctx.globalAlpha = 0.92;
+    sctx.strokeStyle = sigColor;
     sctx.lineWidth = 1.3;
     sctx.stroke();
+    sctx.globalAlpha = 1;
 
     vizFrame(ts || t * 16);
   }
@@ -525,9 +574,11 @@
     sctx.beginPath();
     sctx.moveTo(0, H / 2);
     sctx.lineTo(W, H / 2);
-    sctx.strokeStyle = "rgba(243, 234, 217, 0.7)";
+    sctx.globalAlpha = 0.7;
+    sctx.strokeStyle = sigColor;
     sctx.lineWidth = 1.3;
     sctx.stroke();
+    sctx.globalAlpha = 1;
   } else {
     requestAnimationFrame(frame);
   }

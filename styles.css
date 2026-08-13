@@ -48,8 +48,10 @@
   --rule: #232323;
   --accent: #f0f0ec;
   --accent-soft: rgba(240, 240, 236, 0.1);
-  --island: #000;
-  --island-ink: #f2f2ee;
+  /* In dark mode the page is near-black, so a black island wouldn't show —
+     flip it to light with dark ink so it clearly contrasts. */
+  --island: #f4f1ea;
+  --island-ink: #17130c;
 }
 :root[data-paper="dark"][data-theme="sunset"] { --accent: #ff7a4a; --accent-soft: rgba(255, 122, 74, 0.14); }
 :root[data-paper="dark"][data-theme="matcha"] { --accent: #7ec25a; --accent-soft: rgba(126, 194, 90, 0.14); }
@@ -206,10 +208,10 @@ button { font: inherit; background: none; border: none; color: inherit; cursor: 
   color: var(--island-ink);
   transition: background-color 0.2s;
 }
-.ictl:hover { background: rgba(255, 255, 255, 0.12); }
+.ictl:hover { background: color-mix(in srgb, var(--island-ink) 12%, transparent); }
 .ictl svg { width: 1.1rem; height: 1.1rem; fill: currentColor; }
-.ictl.play { width: 2.4rem; height: 2.4rem; background: rgba(255, 255, 255, 0.14); }
-.ictl.play:hover { background: rgba(255, 255, 255, 0.24); }
+.ictl.play { width: 2.4rem; height: 2.4rem; background: color-mix(in srgb, var(--island-ink) 14%, transparent); }
+.ictl.play:hover { background: color-mix(in srgb, var(--island-ink) 24%, transparent); }
 
 .island-progress { display: flex; align-items: center; gap: 0.55rem; margin-top: 0.6rem; }
 .ptime { font-family: var(--font-mono); font-size: 0.58rem; opacity: 0.65; min-width: 2.1em; }
@@ -218,7 +220,7 @@ button { font: inherit; background: none; border: none; color: inherit; cursor: 
   appearance: none;
   height: 3px;
   border-radius: 2px;
-  background: rgba(255, 255, 255, 0.22);
+  background: color-mix(in srgb, var(--island-ink) 22%, transparent);
   outline-offset: 4px;
 }
 #seek::-webkit-slider-thumb { appearance: none; width: 11px; height: 11px; border-radius: 50%; background: var(--island-ink); }
@@ -231,7 +233,7 @@ button { font: inherit; background: none; border: none; color: inherit; cursor: 
   gap: 0.6rem;
   margin-top: 0.7rem;
   padding-top: 0.6rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid color-mix(in srgb, var(--island-ink) 12%, transparent);
   font-family: var(--font-mono);
   font-size: 0.56rem;
   letter-spacing: 0.05em;
@@ -475,6 +477,43 @@ a.hl:hover { background: linear-gradient(to top, var(--mark, var(--accent-soft))
   text-transform: uppercase;
   color: var(--ink-faint);
 }
+
+/* classic GitHub green squares (fixed green — recognisable, not palette-tinted) */
+.gh-squares-block {
+  margin-top: 1.4rem;
+  padding-top: 1.2rem;
+  border-top: 1px solid var(--rule);
+}
+.gh-sq-label {
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 0.8rem;
+  text-align: center;
+}
+.gh-squares { display: flex; gap: 4px; justify-content: center; }
+.gh-sq-week { display: grid; grid-template-rows: repeat(7, 1fr); gap: 4px; }
+.gh-sq {
+  width: 15px;
+  height: 15px;
+  border-radius: 4px;
+  background: #ebedf0;
+  transition: transform 0.15s var(--spring);
+}
+.gh-sq[data-level="1"] { background: #9be9a8; }
+.gh-sq[data-level="2"] { background: #40c463; }
+.gh-sq[data-level="3"] { background: #30a14e; }
+.gh-sq[data-level="4"] { background: #216e39; }
+.gh-sq.today { outline: 2px solid var(--accent); outline-offset: 1.5px; }
+.gh-sq-pad { visibility: hidden; }
+.gh-sq:hover { transform: scale(1.25); }
+:root[data-paper="dark"] .gh-sq { background: #161b22; }
+:root[data-paper="dark"] .gh-sq[data-level="1"] { background: #0e4429; }
+:root[data-paper="dark"] .gh-sq[data-level="2"] { background: #006d32; }
+:root[data-paper="dark"] .gh-sq[data-level="3"] { background: #26a641; }
+:root[data-paper="dark"] .gh-sq[data-level="4"] { background: #39d353; }
 
 .gh-loading { font-family: var(--font-mono); font-size: 0.72rem; color: var(--ink-faint); }
 .gh-footnote { margin-top: 0.8rem; font-size: 0.85rem; color: var(--ink-faint); }
