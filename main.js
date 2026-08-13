@@ -74,14 +74,19 @@
   }
 
   /* ========================= contribution graph =========================
-     The last 30 days only, drawn in the site's accent so every palette
-     recolours it. Cells pop in on a stagger, a streak badge counts the
-     run, and level-4 days glow. Falls back quietly if the API is out. */
+     The last 30 days as a full-width bar chart in the site's accent (so every
+     palette recolours it), with a stats row. Bars grow in on a stagger, the
+     busiest days glow. Falls back quietly if the API is out. */
   var graph = document.getElementById("gh-graph");
   var totalEl = document.getElementById("gh-total");
   var streakEl = document.getElementById("gh-streak");
-  var legendEl = document.getElementById("gh-legend");
+  var axisEl = document.getElementById("gh-axis");
+  var statsEl = document.getElementById("gh-stats");
   var fallback = document.getElementById("gh-fallback");
+
+  function fmtDate(d) {
+    return new Date(d + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  }
 
   fetch("https://github-contributions-api.jogruber.de/v4/LakshyaV?y=last")
     .then(function (r) {
@@ -92,20 +97,16 @@
       var all = data.contributions || [];
       if (!all.length) throw new Error("empty");
 
-      // keep the trailing 30 days, but pad to a whole week at the front so
-      // the grid's weekday rows line up cleanly
       var todayStr = new Date().toDateString();
       var recent = all.slice(-30);
-      while (recent.length && new Date(recent[0].date + "T00:00:00").getDay() !== 0) {
-        var idx = all.indexOf(recent[0]);
-        if (idx <= 0) break;
-        recent.unshift(all[idx - 1]);
-      }
 
-      var monthTotal = all.slice(-30).reduce(function (n, d) { return n + d.count; }, 0);
+      var monthTotal = recent.reduce(function (n, d) { return n + d.count; }, 0);
+      var maxCount = recent.reduce(function (m, d) { return Math.max(m, d.count); }, 0) || 1;
+      var activeDays = recent.filter(function (d) { return d.count > 0; }).length;
+      var avg = Math.round((monthTotal / recent.length) * 10) / 10;
 
-      // current streak: consecutive days with activity, ending today or (if
-      // today is still blank) yesterday
+      // current streak: consecutive active days ending today (or yesterday if
+      // today is still blank)
       var streak = 0;
       for (var i = all.length - 1; i >= 0; i--) {
         if (all[i].count > 0) streak++;
@@ -113,49 +114,39 @@
         else break;
       }
 
-      var grid = document.createElement("div");
-      grid.className = "gh-month";
-      var week = null;
-      var firstWeek = true;
       recent.forEach(function (day, i) {
-        var dow = new Date(day.date + "T00:00:00").getDay(); // 0=Sun … 6=Sat
-        if (!week || dow === 0) {
-          week = document.createElement("div");
-          week.className = "gh-week";
-          grid.appendChild(week);
-          // pad the opening week so the weekday rows line up
-          if (firstWeek && dow !== 0) {
-            for (var s = 0; s < dow; s++) {
-              var sp = document.createElement("span");
-              sp.className = "gh-day";
-              sp.style.visibility = "hidden";
-              sp.style.animation = "none";
-              week.appendChild(sp);
-            }
-          }
-          firstWeek = false;
-        }
-        var cell = document.createElement("span");
-        cell.className = "gh-day";
-        cell.setAttribute("data-level", String(day.level));
-        cell.style.animationDelay = i * 14 + "ms";
-        if (new Date(day.date + "T00:00:00").toDateString() === todayStr) cell.classList.add("today");
-        cell.title = day.date + " · " + day.count + (day.count === 1 ? " contribution" : " contributions");
-        week.appendChild(cell);
+        var bar = document.createElement("div");
+        bar.className = "gh-bar";
+        bar.setAttribute("data-level", String(day.level));
+        // height as a fraction of the tallest day; zero days keep a faint nub
+        var h = day.count === 0 ? 5 : Math.round(10 + (day.count / maxCount) * 82);
+        bar.style.height = h + "%";
+        bar.style.animationDelay = i * 22 + "ms";
+        if (new Date(day.date + "T00:00:00").toDateString() === todayStr) bar.classList.add("today");
+        bar.title = fmtDate(day.date) + " · " + day.count + (day.count === 1 ? " contribution" : " contributions");
+        graph.appendChild(bar);
       });
 
       if (fallback) fallback.remove();
-      graph.appendChild(grid);
-      graph.scrollLeft = graph.scrollWidth;
 
       if (totalEl) {
-        totalEl.innerHTML = "<b>" + monthTotal + "</b> contribution" + (monthTotal === 1 ? "" : "s") + " this month";
+        totalEl.innerHTML =
+          "<b>" + monthTotal + "</b> contribution" + (monthTotal === 1 ? "" : "s") + " this month";
       }
       if (streakEl && streak > 1) {
         streakEl.textContent = "🔥 " + streak + "-day streak";
         streakEl.hidden = false;
       }
-      if (legendEl) legendEl.hidden = false;
+      if (axisEl) {
+        axisEl.firstElementChild.textContent = fmtDate(recent[0].date);
+        axisEl.hidden = false;
+      }
+      if (statsEl) {
+        document.getElementById("gh-stat-best").textContent = maxCount;
+        document.getElementById("gh-stat-avg").textContent = avg;
+        document.getElementById("gh-stat-active").innerHTML = activeDays + "<i>/" + recent.length + "</i>";
+        statsEl.hidden = false;
+      }
     })
     .catch(function () {
       if (totalEl) totalEl.textContent = "github is being shy right now";

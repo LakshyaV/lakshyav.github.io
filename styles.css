@@ -390,63 +390,91 @@ a.hl:hover { background: linear-gradient(to top, var(--mark, var(--accent-soft))
 
 .gh-card {
   margin-top: 1.2rem;
-  padding: 1.3rem 1.4rem 1.15rem;
+  padding: 1.6rem 1.7rem 1.4rem;
   border: 1px solid var(--rule);
-  border-radius: 16px;
-  background: color-mix(in srgb, var(--paper-deep) 45%, var(--paper));
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--paper-deep) 40%, var(--paper));
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
 }
 .gh-head {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: 1rem;
-  margin-bottom: 1.1rem;
+  margin-bottom: 1.35rem;
 }
-.gh-count { font-size: 1.35rem; font-weight: 600; letter-spacing: -0.02em; color: var(--ink); }
+.gh-count { font-size: 1.55rem; font-weight: 600; letter-spacing: -0.025em; color: var(--ink); }
 .gh-count b { color: var(--accent); font-weight: 700; }
 .gh-streak {
   font-family: var(--font-mono);
   font-size: 0.72rem;
   letter-spacing: 0.04em;
   color: var(--accent);
-  padding: 0.25rem 0.6rem;
+  padding: 0.3rem 0.7rem;
   border-radius: 999px;
   background: var(--accent-soft);
   white-space: nowrap;
 }
 
-.gh-month { display: flex; gap: 5px; overflow-x: auto; padding-bottom: 2px; }
-.gh-week { display: grid; grid-template-rows: repeat(7, 1fr); gap: 5px; }
-.gh-day {
-  width: 15px;
-  height: 15px;
-  border-radius: 4px;
-  background: var(--paper-deep);
-  transition: transform 0.18s var(--spring), box-shadow 0.18s;
-}
-.gh-month .gh-day {
-  opacity: 0;
-  transform: scale(0.4);
-  animation: gh-pop 0.4s var(--spring) forwards;
-}
-@keyframes gh-pop { to { opacity: 1; transform: scale(1); } }
-.gh-day[data-level="1"] { background: color-mix(in srgb, var(--accent) 30%, var(--paper-deep)); }
-.gh-day[data-level="2"] { background: color-mix(in srgb, var(--accent) 55%, var(--paper-deep)); }
-.gh-day[data-level="3"] { background: color-mix(in srgb, var(--accent) 78%, var(--paper-deep)); }
-.gh-day[data-level="4"] { background: var(--accent); box-shadow: 0 0 10px var(--accent-soft); }
-.gh-day.today { outline: 2px solid var(--accent); outline-offset: 1.5px; }
-.gh-month .gh-day:hover { transform: scale(1.28); box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18); }
-
-.gh-legend {
+/* full-width daily bar chart */
+.gh-bars {
   display: flex;
-  align-items: center;
-  gap: 5px;
-  margin-top: 1rem;
+  align-items: flex-end;
+  gap: 2px;
+  height: 104px;
+  width: 100%;
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 1px;
+}
+.gh-bar {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 5%;
+  border-radius: 4px 4px 1px 1px;
+  background: color-mix(in srgb, var(--accent) 38%, var(--paper-deep));
+  transform: scaleY(0);
+  transform-origin: bottom;
+  animation: gh-grow 0.55s var(--spring) forwards;
+  transition: filter 0.15s;
+}
+@keyframes gh-grow { to { transform: scaleY(1); } }
+.gh-bar[data-level="0"] { background: var(--paper-deep); }
+.gh-bar[data-level="2"] { background: color-mix(in srgb, var(--accent) 62%, var(--paper-deep)); }
+.gh-bar[data-level="3"] { background: color-mix(in srgb, var(--accent) 82%, var(--paper-deep)); }
+.gh-bar[data-level="4"] { background: var(--accent); box-shadow: 0 0 14px var(--accent-soft); }
+.gh-bar:hover { filter: brightness(1.15) saturate(1.1); }
+.gh-bar.today {
+  background: var(--accent);
+  box-shadow: 0 0 14px var(--accent-soft), inset 0 0 0 1px color-mix(in srgb, var(--paper) 55%, transparent);
+}
+
+.gh-axis {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.5rem;
   font-family: var(--font-mono);
   font-size: 0.6rem;
+  letter-spacing: 0.06em;
   color: var(--ink-faint);
 }
-.gh-legend .gh-day { width: 11px; height: 11px; animation: none; opacity: 1; transform: none; }
+
+.gh-stats {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.4rem;
+  padding-top: 1.15rem;
+  border-top: 1px solid var(--rule);
+}
+.gh-stat { flex: 1; display: flex; flex-direction: column; gap: 0.2rem; }
+.gh-stat-num { font-size: 1.35rem; font-weight: 600; letter-spacing: -0.02em; color: var(--accent); }
+.gh-stat-num i { font-style: normal; font-size: 0.85rem; font-weight: 500; color: var(--ink-faint); }
+.gh-stat-label {
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
 
 .gh-loading { font-family: var(--font-mono); font-size: 0.72rem; color: var(--ink-faint); }
 .gh-footnote { margin-top: 0.8rem; font-size: 0.85rem; color: var(--ink-faint); }
