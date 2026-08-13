@@ -139,7 +139,7 @@ button { font: inherit; background: none; border: none; color: inherit; cursor: 
   border-radius: 22px;
   background: var(--island);
   color: var(--island-ink);
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.24), 0 1px 4px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.32), 0 4px 10px rgba(0, 0, 0, 0.2);
   overflow: hidden;
   transition: width 0.5s var(--spring), border-radius 0.5s var(--spring);
 }
@@ -660,6 +660,9 @@ html.entry-done .entry { display: none; }
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
   max-width: calc(100vw - 2rem);
 }
+/* .control-hud sets display:flex, which overrode the [hidden] attribute — so
+   the HUD (default text "starting camera…") showed even in trackpad mode. */
+.control-hud[hidden] { display: none; }
 .hud-cam {
   width: 84px;
   height: 60px;
