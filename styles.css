@@ -400,12 +400,11 @@ a.hl:hover { background: linear-gradient(to top, var(--mark, var(--accent-soft))
 }
 .gh-head {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 1.35rem;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 1.3rem;
 }
-.gh-count { font-size: 1.55rem; font-weight: 600; letter-spacing: -0.025em; color: var(--ink); }
+.gh-count { font-size: 1.55rem; font-weight: 600; letter-spacing: -0.025em; color: var(--ink); margin-right: auto; }
 .gh-count b { color: var(--accent); font-weight: 700; }
 .gh-streak {
   font-family: var(--font-mono);
@@ -418,24 +417,17 @@ a.hl:hover { background: linear-gradient(to top, var(--mark, var(--accent-soft))
   white-space: nowrap;
 }
 
-/* face (left) + squares (right) */
-.gh-body {
-  display: flex;
-  align-items: center;
-  gap: 1.5rem;
+/* tiny reactive face, inline beside the count — a quiet easter egg */
+.gh-face-mini { flex: none; display: block; line-height: 0; }
+.gh-face-mini svg {
+  width: 30px;
+  height: 30px;
+  display: block;
+  overflow: visible;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.12));
+  transition: transform 0.2s var(--spring);
 }
-.gh-face { flex: none; display: flex; flex-direction: column; align-items: center; gap: 0.6rem; }
-.gh-face svg { width: 116px; height: 116px; display: block; overflow: visible; }
-.gh-face-hint {
-  font-family: var(--font-mono);
-  font-size: 0.55rem;
-  letter-spacing: 0.08em;
-  color: var(--ink-faint);
-}
-@media (max-width: 34rem) {
-  .gh-face svg { width: 92px; height: 92px; }
-  .gh-body { gap: 0.9rem; }
-}
+.gh-card:hover .gh-face-mini svg { transform: translateY(-1px) scale(1.06); }
 
 .gh-stats {
   display: flex;
@@ -455,13 +447,14 @@ a.hl:hover { background: linear-gradient(to top, var(--mark, var(--accent-soft))
   color: var(--ink-faint);
 }
 
-/* classic GitHub green squares (fixed green — recognisable, not palette-tinted) */
-.gh-squares { display: flex; gap: 4px; margin-left: auto; }
-.gh-sq-week { display: grid; grid-template-rows: repeat(7, 1fr); gap: 4px; }
+/* classic GitHub green squares (fixed green — recognisable, not palette-tinted).
+   One row of 30 that stretches evenly to fill the card, staying square. */
+.gh-squares { display: flex; gap: 4px; width: 100%; }
 .gh-sq {
-  width: 15px;
-  height: 15px;
-  border-radius: 4px;
+  flex: 1 1 0;
+  min-width: 0;
+  aspect-ratio: 1;
+  border-radius: 3px;
   background: #ebedf0;
   transition: transform 0.15s var(--spring);
 }
@@ -470,8 +463,7 @@ a.hl:hover { background: linear-gradient(to top, var(--mark, var(--accent-soft))
 .gh-sq[data-level="3"] { background: #30a14e; }
 .gh-sq[data-level="4"] { background: #216e39; }
 .gh-sq.today { outline: 2px solid var(--accent); outline-offset: 1.5px; }
-.gh-sq-pad { visibility: hidden; }
-.gh-sq:hover { transform: scale(1.25); }
+.gh-sq:hover { transform: scale(1.35); }
 :root[data-paper="dark"] .gh-sq { background: #161b22; }
 :root[data-paper="dark"] .gh-sq[data-level="1"] { background: #0e4429; }
 :root[data-paper="dark"] .gh-sq[data-level="2"] { background: #006d32; }

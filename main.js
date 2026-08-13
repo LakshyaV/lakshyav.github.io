@@ -74,10 +74,10 @@
   }
 
   /* ========================= contribution graph =========================
-     The last 30 days as GitHub's classic green squares on the right, and a
-     hand-drawn face on the left that reacts to whichever square you hover:
-     a deep-green day makes it grin, a grey one makes it grumpy. The face
-     morphs continuously toward a target "mood", so it never snaps. */
+     The last 30 days as GitHub's classic green squares in one full-width row.
+     A tiny hand-drawn face sits inline beside the count as a quiet easter
+     egg: hover a deep-green day and it grins, a grey one and it turns grumpy.
+     The face morphs continuously toward a target "mood", so it never snaps. */
   var graph = document.getElementById("gh-graph");
   var totalEl = document.getElementById("gh-total");
   var streakEl = document.getElementById("gh-streak");
@@ -173,31 +173,9 @@
         else break;
       }
 
-      // classic green squares, the 30 days padded to whole weeks
-      var padded = recent.slice();
-      var firstIdx = all.length - recent.length;
-      while (padded.length && new Date(padded[0].date + "T00:00:00").getDay() !== 0 && firstIdx > 0) {
-        firstIdx--;
-        padded.unshift(all[firstIdx]);
-      }
+      // classic green squares, one flat row of 30 that stretches to fill the card
       if (fallback) fallback.remove();
-      var wk = null,
-        firstW = true;
-      padded.forEach(function (day) {
-        var dow = new Date(day.date + "T00:00:00").getDay();
-        if (!wk || dow === 0) {
-          wk = document.createElement("div");
-          wk.className = "gh-sq-week";
-          graph.appendChild(wk);
-          if (firstW && dow !== 0) {
-            for (var s = 0; s < dow; s++) {
-              var sp = document.createElement("span");
-              sp.className = "gh-sq gh-sq-pad";
-              wk.appendChild(sp);
-            }
-          }
-          firstW = false;
-        }
+      recent.forEach(function (day) {
         var sq = document.createElement("span");
         sq.className = "gh-sq";
         sq.setAttribute("data-level", String(day.level));
@@ -207,11 +185,12 @@
         sq.addEventListener("mouseenter", function () {
           moodTarget = day.level / 4;
         });
-        wk.appendChild(sq);
+        graph.appendChild(sq);
       });
 
-      // resting expression reflects the month; return to it when not hovering
-      defaultMood = Math.max(0.35, Math.min(1, meanLevel / 3));
+      // resting expression is content by default (a soft smile), leaning
+      // happier in a busy month; hovering is what drives it to the extremes
+      defaultMood = Math.max(0.58, Math.min(0.9, 0.45 + meanLevel / 3));
       moodTarget = defaultMood;
       graph.addEventListener("mouseleave", function () {
         moodTarget = defaultMood;

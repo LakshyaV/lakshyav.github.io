@@ -216,11 +216,7 @@
       <p class="block-label">github · last 30 days</p>
       <div class="gh-card">
         <div class="gh-head">
-          <span class="gh-count" id="gh-total">…</span>
-          <span class="gh-streak" id="gh-streak" hidden></span>
-        </div>
-        <div class="gh-body">
-          <div class="gh-face" id="gh-face" aria-hidden="true">
+          <span class="gh-face-mini" id="gh-face" aria-hidden="true">
             <svg viewBox="0 0 120 120">
               <circle cx="60" cy="62" r="50" fill="#ffcc4d" stroke="#e4a93a" stroke-width="2.5" />
               <ellipse id="blushL" cx="36" cy="72" rx="9" ry="5.5" fill="#ff8aa0" opacity="0" />
@@ -231,11 +227,12 @@
               <ellipse id="eyeR" cx="76" cy="56" rx="5.5" ry="5.5" fill="#3a2d16" />
               <path id="mouth" stroke="#3a2d16" stroke-width="4.5" stroke-linecap="round" fill="none" />
             </svg>
-            <p class="gh-face-hint">hover the squares →</p>
-          </div>
-          <div class="gh-squares" id="gh-graph" aria-label="Contributions, last 30 days">
-            <p class="gh-loading" id="gh-fallback">loading…</p>
-          </div>
+          </span>
+          <span class="gh-count" id="gh-total">…</span>
+          <span class="gh-streak" id="gh-streak" hidden></span>
+        </div>
+        <div class="gh-squares" id="gh-graph" aria-label="Contributions, last 30 days">
+          <p class="gh-loading" id="gh-fallback">loading…</p>
         </div>
         <div class="gh-stats" id="gh-stats" hidden>
           <div class="gh-stat"><span class="gh-stat-num" id="gh-stat-best">–</span><span class="gh-stat-label">best day</span></div>
@@ -253,7 +250,7 @@
       <p class="block-label">trying to</p>
       <ul class="list">
         <li>make talking to a computer as private as thinking</li>
-        <li>meet people building strange interfaces</li>
+        <li>meet people building stuff</li>
       </ul>
     </section>
 
