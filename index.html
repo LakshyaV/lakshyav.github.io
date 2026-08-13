@@ -205,7 +205,7 @@
         <li><span class="hl hl-orange">vursor</span>, cursor for video editing.
           <a class="hl hl-orange logo-link" href="https://www.ycombinator.com" target="_blank" rel="noopener noreferrer">y combinator<img class="mini-logo" src="https://www.google.com/s2/favicons?domain=ycombinator.com&sz=64" alt="" loading="lazy" /></a>
           called, interviewed us out of 1500 builders, then passed. now building something better</li>
-        <li><span class="hl hl-blue">aicruiter</span>, a hyperrealistic ai agent that runs interviews end to end, answering in about a second</li>
+        <li><span class="hl hl-blue">aicruiter</span>, a hyper-realistic ai agent that runs interviews end to end, answering in about a second</li>
         <li><span class="hl hl-green">cheetcode</span>, a chrome extension that takes control of your laptop mid-interview, solves the leetcode, writes it out for you, and slips past cheating detection</li>
         <li><span class="hl hl-red">mind-controlled wheelchair</span>, top six nationally at hosa</li>
       </ul>
@@ -219,16 +219,23 @@
           <span class="gh-count" id="gh-total">…</span>
           <span class="gh-streak" id="gh-streak" hidden></span>
         </div>
-        <div class="gh-bars" id="gh-graph" aria-label="Contributions per day over the last 30 days">
-          <p class="gh-loading" id="gh-fallback">loading the last month…</p>
-        </div>
-        <div class="gh-axis" id="gh-axis" hidden>
-          <span>30 days ago</span>
-          <span>today →</span>
-        </div>
-        <div class="gh-squares-block" id="gh-squares-block" hidden>
-          <p class="gh-sq-label">the classic squares</p>
-          <div class="gh-squares" id="gh-squares" aria-hidden="true"></div>
+        <div class="gh-body">
+          <div class="gh-face" id="gh-face" aria-hidden="true">
+            <svg viewBox="0 0 120 120">
+              <circle cx="60" cy="62" r="50" fill="#ffcc4d" stroke="#e4a93a" stroke-width="2.5" />
+              <ellipse id="blushL" cx="36" cy="72" rx="9" ry="5.5" fill="#ff8aa0" opacity="0" />
+              <ellipse id="blushR" cx="84" cy="72" rx="9" ry="5.5" fill="#ff8aa0" opacity="0" />
+              <path id="browL" stroke="#4a3a1e" stroke-width="4" stroke-linecap="round" fill="none" />
+              <path id="browR" stroke="#4a3a1e" stroke-width="4" stroke-linecap="round" fill="none" />
+              <ellipse id="eyeL" cx="44" cy="56" rx="5.5" ry="5.5" fill="#3a2d16" />
+              <ellipse id="eyeR" cx="76" cy="56" rx="5.5" ry="5.5" fill="#3a2d16" />
+              <path id="mouth" stroke="#3a2d16" stroke-width="4.5" stroke-linecap="round" fill="none" />
+            </svg>
+            <p class="gh-face-hint">hover the squares →</p>
+          </div>
+          <div class="gh-squares" id="gh-graph" aria-label="Contributions, last 30 days">
+            <p class="gh-loading" id="gh-fallback">loading…</p>
+          </div>
         </div>
         <div class="gh-stats" id="gh-stats" hidden>
           <div class="gh-stat"><span class="gh-stat-num" id="gh-stat-best">–</span><span class="gh-stat-label">best day</span></div>

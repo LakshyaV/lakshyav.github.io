@@ -74,18 +74,78 @@
   }
 
   /* ========================= contribution graph =========================
-     The last 30 days as a full-width bar chart in the site's accent (so every
-     palette recolours it), with a stats row. Bars grow in on a stagger, the
-     busiest days glow. Falls back quietly if the API is out. */
+     The last 30 days as GitHub's classic green squares on the right, and a
+     hand-drawn face on the left that reacts to whichever square you hover:
+     a deep-green day makes it grin, a grey one makes it grumpy. The face
+     morphs continuously toward a target "mood", so it never snaps. */
   var graph = document.getElementById("gh-graph");
   var totalEl = document.getElementById("gh-total");
   var streakEl = document.getElementById("gh-streak");
-  var axisEl = document.getElementById("gh-axis");
   var statsEl = document.getElementById("gh-stats");
   var fallback = document.getElementById("gh-fallback");
 
   function fmtDate(d) {
     return new Date(d + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  }
+
+  /* ------------------------------- the face ----------------------------- */
+  var faceReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var fEl = {
+    mouth: document.getElementById("mouth"),
+    eyeL: document.getElementById("eyeL"),
+    eyeR: document.getElementById("eyeR"),
+    browL: document.getElementById("browL"),
+    browR: document.getElementById("browR"),
+    blushL: document.getElementById("blushL"),
+    blushR: document.getElementById("blushR"),
+  };
+  var moodCur = 0.5,
+    moodTarget = 0.5,
+    defaultMood = 0.5,
+    fN = 0,
+    blinkUntil = 0,
+    nextBlink = 130;
+
+  // Draw the face for a mood in [0 = grumpy, 1 = delighted].
+  function drawFace(m, blink) {
+    if (!fEl.mouth) return;
+    var eyeRx = 5 + m * 2.4; // wider eyes when excited
+    var eyeRy = blink ? 1 : eyeRx;
+    fEl.eyeL.setAttribute("rx", eyeRx.toFixed(1));
+    fEl.eyeL.setAttribute("ry", eyeRy.toFixed(1));
+    fEl.eyeR.setAttribute("rx", eyeRx.toFixed(1));
+    fEl.eyeR.setAttribute("ry", eyeRy.toFixed(1));
+    // mouth: control point above the corners = frown, below = smile
+    var cy = 78 + (m * 2 - 1) * 17;
+    fEl.mouth.setAttribute("d", "M42 78 Q60 " + cy.toFixed(1) + " 78 78");
+    // brows: inner ends drop toward the nose when grumpy, lift when happy
+    var oy = 42 - m * 3;
+    var iy = 42 + (1 - m) * 8 - m * 4;
+    fEl.browL.setAttribute("d", "M32 " + oy.toFixed(1) + " L48 " + iy.toFixed(1));
+    fEl.browR.setAttribute("d", "M88 " + oy.toFixed(1) + " L72 " + iy.toFixed(1));
+    // blush fades in only when it's really pleased
+    var bl = (Math.max(0, m - 0.62) / 0.38) * 0.85;
+    fEl.blushL.setAttribute("opacity", bl.toFixed(2));
+    fEl.blushR.setAttribute("opacity", bl.toFixed(2));
+  }
+
+  function faceLoop() {
+    requestAnimationFrame(faceLoop);
+    fN += 1;
+    moodCur += (moodTarget - moodCur) * 0.16;
+    var blink = false;
+    if (!faceReduced) {
+      if (fN >= nextBlink) {
+        blinkUntil = fN + 7;
+        nextBlink = fN + 150;
+      }
+      blink = fN < blinkUntil;
+    }
+    drawFace(moodCur, blink);
+  }
+  if (fEl.mouth) {
+    drawFace(0.5, false);
+    requestAnimationFrame(faceLoop);
   }
 
   fetch("https://github-contributions-api.jogruber.de/v4/LakshyaV?y=last")
@@ -104,9 +164,8 @@
       var maxCount = recent.reduce(function (m, d) { return Math.max(m, d.count); }, 0) || 1;
       var activeDays = recent.filter(function (d) { return d.count > 0; }).length;
       var avg = Math.round((monthTotal / recent.length) * 10) / 10;
+      var meanLevel = recent.reduce(function (s, d) { return s + d.level; }, 0) / recent.length;
 
-      // current streak: consecutive active days ending today (or yesterday if
-      // today is still blank)
       var streak = 0;
       for (var i = all.length - 1; i >= 0; i--) {
         if (all[i].count > 0) streak++;
@@ -114,57 +173,49 @@
         else break;
       }
 
-      recent.forEach(function (day, i) {
-        var bar = document.createElement("div");
-        bar.className = "gh-bar";
-        bar.setAttribute("data-level", String(day.level));
-        // height as a fraction of the tallest day; zero days keep a faint nub
-        var h = day.count === 0 ? 5 : Math.round(10 + (day.count / maxCount) * 82);
-        bar.style.height = h + "%";
-        bar.style.animationDelay = i * 22 + "ms";
-        if (new Date(day.date + "T00:00:00").toDateString() === todayStr) bar.classList.add("today");
-        bar.title = fmtDate(day.date) + " · " + day.count + (day.count === 1 ? " contribution" : " contributions");
-        graph.appendChild(bar);
+      // classic green squares, the 30 days padded to whole weeks
+      var padded = recent.slice();
+      var firstIdx = all.length - recent.length;
+      while (padded.length && new Date(padded[0].date + "T00:00:00").getDay() !== 0 && firstIdx > 0) {
+        firstIdx--;
+        padded.unshift(all[firstIdx]);
+      }
+      if (fallback) fallback.remove();
+      var wk = null,
+        firstW = true;
+      padded.forEach(function (day) {
+        var dow = new Date(day.date + "T00:00:00").getDay();
+        if (!wk || dow === 0) {
+          wk = document.createElement("div");
+          wk.className = "gh-sq-week";
+          graph.appendChild(wk);
+          if (firstW && dow !== 0) {
+            for (var s = 0; s < dow; s++) {
+              var sp = document.createElement("span");
+              sp.className = "gh-sq gh-sq-pad";
+              wk.appendChild(sp);
+            }
+          }
+          firstW = false;
+        }
+        var sq = document.createElement("span");
+        sq.className = "gh-sq";
+        sq.setAttribute("data-level", String(day.level));
+        if (new Date(day.date + "T00:00:00").toDateString() === todayStr) sq.classList.add("today");
+        sq.title = fmtDate(day.date) + " · " + day.count + (day.count === 1 ? " contribution" : " contributions");
+        // hovering a square pulls the face toward that day's mood
+        sq.addEventListener("mouseenter", function () {
+          moodTarget = day.level / 4;
+        });
+        wk.appendChild(sq);
       });
 
-      if (fallback) fallback.remove();
-
-      // classic green squares (GitHub's own colours, fixed — the recognisable
-      // look), the same 30 days padded to whole weeks and centred.
-      var sqWrap = document.getElementById("gh-squares");
-      if (sqWrap) {
-        var padded = recent.slice();
-        var firstIdx = all.length - recent.length;
-        while (padded.length && new Date(padded[0].date + "T00:00:00").getDay() !== 0 && firstIdx > 0) {
-          firstIdx--;
-          padded.unshift(all[firstIdx]);
-        }
-        var wk = null,
-          firstW = true;
-        padded.forEach(function (day) {
-          var dow = new Date(day.date + "T00:00:00").getDay();
-          if (!wk || dow === 0) {
-            wk = document.createElement("div");
-            wk.className = "gh-sq-week";
-            sqWrap.appendChild(wk);
-            if (firstW && dow !== 0) {
-              for (var s = 0; s < dow; s++) {
-                var sp = document.createElement("span");
-                sp.className = "gh-sq gh-sq-pad";
-                wk.appendChild(sp);
-              }
-            }
-            firstW = false;
-          }
-          var sq = document.createElement("span");
-          sq.className = "gh-sq";
-          sq.setAttribute("data-level", String(day.level));
-          if (new Date(day.date + "T00:00:00").toDateString() === todayStr) sq.classList.add("today");
-          sq.title = fmtDate(day.date) + " · " + day.count + (day.count === 1 ? " contribution" : " contributions");
-          wk.appendChild(sq);
-        });
-        document.getElementById("gh-squares-block").hidden = false;
-      }
+      // resting expression reflects the month; return to it when not hovering
+      defaultMood = Math.max(0.35, Math.min(1, meanLevel / 3));
+      moodTarget = defaultMood;
+      graph.addEventListener("mouseleave", function () {
+        moodTarget = defaultMood;
+      });
 
       if (totalEl) {
         totalEl.innerHTML =
@@ -173,10 +224,6 @@
       if (streakEl && streak > 1) {
         streakEl.textContent = "🔥 " + streak + "-day streak";
         streakEl.hidden = false;
-      }
-      if (axisEl) {
-        axisEl.firstElementChild.textContent = fmtDate(recent[0].date);
-        axisEl.hidden = false;
       }
       if (statsEl) {
         document.getElementById("gh-stat-best").textContent = maxCount;
