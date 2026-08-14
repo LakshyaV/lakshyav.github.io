@@ -491,7 +491,8 @@ a.hl:hover { background: linear-gradient(to top, var(--mark, var(--accent-soft))
 
 /* compose — a paper card that drafts a mail, matching the github card */
 .compose {
-  margin-top: 3rem;
+  position: relative;
+  margin-top: 3.6rem;
   max-width: 30rem;
   padding: 1.1rem 1.25rem 1rem;
   border: 1px solid var(--rule);
@@ -499,6 +500,47 @@ a.hl:hover { background: linear-gradient(to top, var(--mark, var(--accent-soft))
   background: color-mix(in srgb, var(--paper-deep) 40%, var(--paper));
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
   transition: border-color 0.2s, box-shadow 0.25s var(--ease);
+}
+
+/* a little paper creature peeking over the top edge */
+.compose-peek {
+  position: absolute;
+  left: 28px;
+  top: 1px;
+  width: 58px;
+  pointer-events: none;
+  z-index: 2;
+  transform: translateY(-80%);
+  transform-origin: bottom center;
+  transition: transform 0.35s var(--spring);
+  animation: peek-bob 4.5s ease-in-out infinite;
+}
+.compose-peek svg { width: 100%; height: auto; display: block; overflow: visible; }
+.peek-body,
+.peek-hand {
+  fill: color-mix(in srgb, var(--paper-deep) 40%, var(--paper));
+  stroke: var(--ink);
+  stroke-width: 2.4;
+  stroke-linejoin: round;
+}
+.peek-eye { fill: var(--ink); transform-box: fill-box; transform-origin: center; animation: peek-blink 5.6s ease-in-out infinite; }
+.peek-glint { fill: var(--paper); }
+.peek-mouth { fill: none; stroke: var(--ink); stroke-width: 2.2; stroke-linecap: round; }
+.peek-blush { fill: #ff9ec4; opacity: 0.5; }
+/* when the box is focused the creature perks up, leans in, and grins */
+.compose:focus-within .compose-peek { animation: none; transform: translateY(-96%) rotate(-3deg); }
+.compose:focus-within .peek-mouth { d: path("M39 46 Q45 54 51 46"); }
+@keyframes peek-bob {
+  0%, 100% { transform: translateY(-80%); }
+  50% { transform: translateY(-84%); }
+}
+@keyframes peek-blink {
+  0%, 90%, 100% { transform: scaleY(1); }
+  94% { transform: scaleY(0.12); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .compose-peek { animation: none; }
+  .peek-eye { animation: none; }
 }
 .compose:focus-within {
   border-color: color-mix(in srgb, var(--accent) 45%, var(--rule));
