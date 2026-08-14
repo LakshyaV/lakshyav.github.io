@@ -616,7 +616,7 @@
     var tryBtn = document.createElement("button");
     tryBtn.type = "button";
     tryBtn.className = "hand-cta-try";
-    tryBtn.textContent = "✋ type with your hands";
+    tryBtn.textContent = "✋ type with your hand gestures";
     var sub = document.createElement("span");
     sub.className = "hand-cta-sub";
     sub.textContent = "just for fun";
