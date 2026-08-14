@@ -103,9 +103,10 @@ button { font: inherit; background: none; border: none; color: inherit; cursor: 
   max-width: 46rem;
   margin: 0 auto;
   padding: 1.1rem 1.5rem 0.6rem;
-  /* tinted with the chosen palette so the header matches the rest of the page */
-  background: color-mix(in srgb, var(--accent) 11%, color-mix(in srgb, var(--paper) 82%, transparent));
-  backdrop-filter: blur(6px);
+  /* EXACTLY the page's tinted background (opaque, no blur/transparency) so the
+     header is the same shade as the rest of the page — no seam, no compositing
+     shift from a translucent overlay. */
+  background: color-mix(in srgb, var(--accent) 5%, var(--paper));
   transition: background-color 0.35s;
 }
 

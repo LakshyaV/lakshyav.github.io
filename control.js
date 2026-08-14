@@ -156,12 +156,18 @@
     var target = (direct && direct.closest && direct.closest(CLICKABLE_SEL)) || nearestClickable(x, y, 60);
     if (!target) return;
 
-    // Links: a synthetic click can't open target=_blank — that needs a trusted
-    // user gesture, and a pinch isn't one, so the browser popup-blocks it (this
-    // is why "clicking links didn't work at all"). Navigate directly instead.
+    // Links: open target=_blank ones in a NEW TAB (best-effort — a synthetic
+    // pinch isn't a trusted gesture, so the browser may need pop-ups allowed
+    // for this site; if it blocks the tab we fall back to same-tab so the link
+    // still works). In-page / same-tab links navigate directly.
     var a = target.matches && target.matches("a[href]") ? target : target.closest && target.closest("a[href]");
     if (a && a.href) {
-      window.location.href = a.href; // same tab, always allowed
+      if (a.target === "_blank") {
+        var win = window.open(a.href, "_blank", "noopener");
+        if (!win) window.location.href = a.href; // popup blocked → same tab
+      } else {
+        window.location.href = a.href;
+      }
       return;
     }
     // Everything else (buttons, toggles, chips): fire pointer/mouse events then click.
