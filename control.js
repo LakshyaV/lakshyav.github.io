@@ -222,34 +222,32 @@
     // The fingertip's normalised position only spans a narrow central band of
     // the camera frame, so mapping it 1:1 to the screen made the cursor barely
     // move. GAIN amplifies movement around centre so a small, comfortable hand
-    // motion reaches every edge. This was the "cursor doesn't move" bug.
-    GAIN: 2.1,
-    SMOOTH: 0.5, // cursor EMA
+    // motion reaches every edge. Lower gain = the cursor tracks the hand more
+    // directly (feels like the hand IS the pointer), at the cost of a little
+    // reach.
+    GAIN: 1.7,
+    SMOOTH: 0.62, // cursor EMA — higher = snappier, tracks the hand tighter
     // Pinch measured as thumb-tip→index-tip distance over the index finger's
     // own length (MCP 5 → tip 8): scale- and distance-invariant, unlike the
     // old wrist-based metric which was unreliable at different hand distances.
     PINCH_ON: 0.45, // engage below this
     PINCH_OFF: 0.62, // release above this (hysteresis) — lower so release always registers
-    // Scroll follows the CURSOR (the amplified fingertip you actually see move),
-    // NOT the wrist — the wrist barely moves unless you swing your whole arm to
-    // the frame edge, which is why scroll "only worked at the extremes". Offsets
-    // here are screen PIXELS of cursor movement from where you pinched, so a
-    // small hand motion (amplified into a big cursor motion) scrolls right away.
-    SCROLL_GRACE_MS: 120, // after a pinch, ignore the finger's settle drift this long
-    SCROLL_DEADZONE: 10, // px of cursor movement before scrolling starts
-    SCROLL_SPEED: 1.0, // (offset px − deadzone) → scroll px/frame
-    SCROLL_MAX: 95, // px/frame cap
-    SCROLL_DIR: -1, // -1 = move hand UP scrolls DOWN (grab/Vision-Pro feel)
-    SCROLL_EASE: 0.3, // per-frame easing toward target velocity
+    // GRAB-DRAG scroll: while pinched, the page follows the hand 1:(DRAG_GAIN)
+    // the instant it moves — no displacement threshold, no "hold it at the edge
+    // to build speed". Releasing with speed flings, then it glides to a stop.
+    SCROLL_GRACE_MS: 90, // ignore the finger's settle drift right after a pinch
+    DRAG_GAIN: 2.6, // page px scrolled per screen px the fingertip moves
+    CLICK_MOVE_TOL: 12, // total fingertip travel under which a pinch stays a click
+    MOMENTUM_SEED: 0.6, // fraction of the last drag speed carried into the fling
+    FRICTION: 0.9, // per-frame momentum decay after release
+    FLING_MIN: 1.5, // min drag speed (px/frame) that starts a fling
     CLICK_DEBOUNCE_MS: 300,
   };
 
-  // Scroll velocity from the cursor's vertical offset (screen px) from where
-  // you pinched. Exposed for tests.
-  function gScrollVel(offsetPx) {
-    var mag = Math.abs(offsetPx) - G.SCROLL_DEADZONE;
-    if (mag <= 0) return 0;
-    return G.SCROLL_DIR * (offsetPx < 0 ? -1 : 1) * Math.min(mag * G.SCROLL_SPEED, G.SCROLL_MAX);
+  // Page pixels to scroll for a vertical fingertip move of dyPx this frame.
+  // Hand up (dy < 0) scrolls the page DOWN (grab/Vision-Pro feel). Exposed for tests.
+  function gDragScroll(dyPx) {
+    return -dyPx * G.DRAG_GAIN;
   }
 
   // Pure mapping/pinch helpers — exposed for automated tests (no camera needed).
@@ -285,7 +283,7 @@
     mapCursor: gMapCursor,
     pinchRatio: gPinchRatio,
     scrollDelta: gScrollDelta,
-    scrollVel: gScrollVel,
+    dragScroll: gDragScroll,
     clickAt: clickAt,
     G: G,
   };
@@ -343,12 +341,13 @@
       haveCursor = false;
     var pinching = false,
       pinchStartT = 0,
-      anchorCursorY = 0, // cursor Y where scrolling begins (after the grace)
+      lastDragCy = 0, // fingertip Y last frame, for the grab-drag delta
+      dragMoved = 0, // total travel this pinch (click vs scroll)
+      flingVel = 0, // last frame's scroll amount, seeds the release fling
       clickX = 0,
       clickY = 0, // cursor aim captured at pinch-start
       hasScrolled = false, // did this pinch move the page? (then it's not a click)
-      scrollTargetVel = 0, // set on detection, applied+eased every frame in loop
-      scrollCurVel = 0,
+      scrollCurVel = 0, // momentum glide after release, applied every render frame
       lastClickT = 0;
 
     // The hand IS the cursor: the skeleton is drawn at true size translated so
@@ -408,49 +407,58 @@
       var ratio = gPinchRatio(lms);
 
       if (!pinching && ratio < G.PINCH_ON) {
-        // pinch begins
+        // pinch begins — grab the page here
         pinching = true;
         pinchStartT = now;
-        anchorCursorY = cy;
+        lastDragCy = cy;
+        dragMoved = 0;
+        flingVel = 0;
         clickX = cx;
         clickY = cy;
         hasScrolled = false;
+        scrollCurVel = 0; // cancel any leftover momentum
       } else if (pinching && ratio > G.PINCH_OFF) {
-        // pinch released. A pinch that never scrolled is a CLICK.
+        // release. Never moved → it's a CLICK. Moved with speed → fling.
         if (!hasScrolled && now - lastClickT > G.CLICK_DEBOUNCE_MS) {
           clickAt(clickX, clickY);
           lastClickT = now;
+        } else if (Math.abs(flingVel) > G.FLING_MIN) {
+          scrollCurVel = flingVel * G.MOMENTUM_SEED;
         }
         pinching = false;
-        scrollTargetVel = 0;
       }
 
       if (pinching) {
         if (now - pinchStartT < G.SCROLL_GRACE_MS) {
-          // Grace window: the fingertip drifts as the pinch closes. Keep the
-          // anchor (and click aim) glued to the cursor so that settle doesn't
-          // scroll, and a quick tap here stays a clean click.
-          anchorCursorY = cy;
+          // Settle window: the fingertip drifts as the pinch closes. Keep the
+          // grab point and click aim glued so settle doesn't scroll and a quick
+          // tap stays a clean click.
+          lastDragCy = cy;
           clickX = cx;
           clickY = cy;
-          scrollTargetVel = 0;
+          flingVel = 0;
           setStatus("pinch · release to click, move to scroll · esc to exit", true);
         } else {
-          // After the grace, ANY cursor movement scrolls — the cursor moves with
-          // your hand, so this responds the instant you move.
-          scrollTargetVel = gScrollVel(cy - anchorCursorY);
-          if (scrollTargetVel !== 0) hasScrolled = true;
+          // Grab-drag: the page follows the hand the instant it moves.
+          var dy = cy - lastDragCy;
+          lastDragCy = cy;
+          dragMoved += Math.abs(dy);
+          if (Math.abs(dy) > 0.05) {
+            var amt = gDragScroll(dy);
+            window.scrollBy(0, amt);
+            flingVel = amt;
+            if (dragMoved > G.CLICK_MOVE_TOL) hasScrolled = true;
+          } else {
+            flingVel *= 0.6; // hand held still → don't fling on release
+          }
           setStatus(
-            scrollTargetVel < 0
-              ? "scrolling up ↑ · esc to exit"
-              : scrollTargetVel > 0
-                ? "scrolling down ↓ · esc to exit"
-                : "move to scroll · release to click · esc to exit",
+            hasScrolled
+              ? "scrolling · release to stop · esc to exit"
+              : "move to scroll · release to click · esc to exit",
             true
           );
         }
       } else {
-        scrollTargetVel = 0;
         setStatus("move your hand · pinch to click · pinch + move to scroll · esc to exit", true);
       }
     }
@@ -475,16 +483,19 @@
           if (lastLandmarks) processHand(lastLandmarks, W, H);
           else {
             if (pinching) pinching = false;
-            scrollTargetVel = 0;
             setStatus("show me your hand ✋", true);
           }
         }
       }
 
-      // Smooth scrolling: ease the actual velocity toward the target and apply
-      // it EVERY animation frame (60fps), not just on ~30fps detection frames.
-      scrollCurVel += G.SCROLL_EASE * (scrollTargetVel - scrollCurVel);
-      if (Math.abs(scrollCurVel) > 0.3) window.scrollBy(0, scrollCurVel);
+      // The grab-drag scrolls directly while pinched (in processHand). Between
+      // pinches, glide the leftover fling momentum to a smooth stop at 60fps.
+      if (!pinching && Math.abs(scrollCurVel) > 0.3) {
+        window.scrollBy(0, scrollCurVel);
+        scrollCurVel *= G.FRICTION;
+      } else if (!pinching) {
+        scrollCurVel = 0;
+      }
 
       if (lastLandmarks) drawSkeleton(lastLandmarks, W, H);
     }
