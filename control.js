@@ -126,7 +126,7 @@
   // Click the real DOM element under (x,y). The overlay + cursor are drawn on a
   // pointer-events:none canvas, so elementFromPoint returns the true element.
   var CLICKABLE_SEL =
-    "a[href], button, [role=button], input, label, summary, .chip, .mode, .icon-link, .sd, .ictl, .island-compact";
+    "a[href], button, [role=button], input, textarea, label, summary, .chip, .mode, .icon-link, .sd, .ictl, .island-compact";
 
   // Nearest clickable element within r px of (x,y) — a magnetic hit test so an
   // imprecise camera cursor still lands on small links.
@@ -182,6 +182,9 @@
 
   function teardown() {
     activeMode = null;
+    try {
+      Keyboard.hide();
+    } catch (_) {}
     stopFns.forEach(function (fn) {
       try {
         fn();
@@ -277,6 +280,326 @@
   function gScrollDelta(cyNow, cyPrev, gain) {
     return -(cyNow - cyPrev) * gain;
   }
+
+  /* ===================== keyboard: poke-typing config =====================
+     Depth (z) is the noisiest landmark axis on one camera, so a poke is NOT
+     gated on a raw threshold. We take a distance-invariant forward signal
+     (index tip pushed past the palm plane, from worldLandmarks in metres),
+     One-Euro filter it, and fire on displacement-past-baseline AND velocity,
+     with hysteresis + a refractory period + a required retract. Pinch is kept
+     as a reliable fallback. Constants from research; tune on real hardware. */
+  var KB = {
+    GAIN: 1.55, // pointing amplification over the keys
+    SMOOTH: 0.55, // aim EMA
+    REFRACTORY_MS: 220, // min gap between key presses
+    BASELINE_EMA: 0.02, // slow drift tracking of the resting finger extension
+    // metric from worldLandmarks (metres) — distance-invariant, preferred
+    world: { FIRE_DISP: 0.02, RELEASE_DISP: 0.01, FIRE_VEL: 0.15 },
+    // fallback from normalized z (tip8 − mcp5) if worldLandmarks is absent
+    norm: { FIRE_DISP: 0.045, RELEASE_DISP: 0.022, FIRE_VEL: 0.4 },
+  };
+
+  // One-Euro filter (Casiez et al.) — adapts smoothing to speed: steady when
+  // still, responsive on a fast jab. Better than EMA for a signal we threshold.
+  function makeOneEuro(minCutoff, beta, dCutoff) {
+    var xPrev = null,
+      dxPrev = 0,
+      tPrev = null;
+    function alpha(cutoff, dt) {
+      var tau = 1 / (2 * Math.PI * cutoff);
+      return 1 / (1 + tau / dt);
+    }
+    return function (x, tMs) {
+      if (xPrev === null) {
+        xPrev = x;
+        tPrev = tMs;
+        return x;
+      }
+      var dt = (tMs - tPrev) / 1000;
+      if (dt <= 0) dt = 1 / 60;
+      tPrev = tMs;
+      var dx = (x - xPrev) / dt;
+      dxPrev = dxPrev + alpha(dCutoff, dt) * (dx - dxPrev);
+      var cutoff = minCutoff + beta * Math.abs(dxPrev);
+      xPrev = xPrev + alpha(cutoff, dt) * (x - xPrev);
+      return xPrev;
+    };
+  }
+
+  // Unit normal of the palm plane (wrist 0, index-MCP 5, pinky-MCP 17),
+  // oriented toward the camera so a forward poke reads positive for either hand.
+  function palmNormal(w0, w5, w17) {
+    var ax = w5.x - w0.x,
+      ay = w5.y - w0.y,
+      az = w5.z - w0.z;
+    var bx = w17.x - w0.x,
+      by = w17.y - w0.y,
+      bz = w17.z - w0.z;
+    var nx = ay * bz - az * by,
+      ny = az * bx - ax * bz,
+      nz = ax * by - ay * bx;
+    var m = Math.sqrt(nx * nx + ny * ny + nz * nz) || 1e-6;
+    nx /= m;
+    ny /= m;
+    nz /= m;
+    if (nz > 0) {
+      nx = -nx;
+      ny = -ny;
+      nz = -nz;
+    } // smaller z = nearer the camera
+    return { x: nx, y: ny, z: nz };
+  }
+
+  // Forward-extension signal: how far the index tip pokes past its own knuckle
+  // along the palm normal. Metres if world landmarks are given, else normalized.
+  function gForwardSignal(Lnorm, Wworld) {
+    if (Wworld) {
+      var n = palmNormal(Wworld[0], Wworld[5], Wworld[17]);
+      return (
+        (Wworld[8].x - Wworld[5].x) * n.x +
+        (Wworld[8].y - Wworld[5].y) * n.y +
+        (Wworld[8].z - Wworld[5].z) * n.z
+      );
+    }
+    return Lnorm[5].z - Lnorm[8].z; // −z = nearer; tip nearer than knuckle ⇒ positive
+  }
+
+  // Assign each detected hand to a stable slot (0/1) by handedness label, so
+  // per-hand poke state doesn't cross-contaminate when hand order shuffles.
+  function assignSlots(res) {
+    var out = [],
+      used = [false, false];
+    var hands = res.landmarks || [];
+    for (var i = 0; i < hands.length && i < 2; i++) {
+      var hd = res.handedness && res.handedness[i] && res.handedness[i][0];
+      var slot = hd && hd.categoryName === "Right" ? 1 : 0;
+      if (used[slot]) slot = slot === 0 ? 1 : 0;
+      if (used[slot]) continue;
+      used[slot] = true;
+      out.push({ i: i, slot: slot });
+    }
+    return out;
+  }
+
+  /* ===================== the glass keyboard ===================== */
+  var Keyboard = (function () {
+    var el = null,
+      tips = [null, null],
+      built = false,
+      shifted = false,
+      isOpenFlag = false,
+      hoverKey = [null, null];
+    var ROWS = [
+      ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"],
+      ["q", "w", "e", "r", "t", "y", "u", "i", "o", "p"],
+      ["a", "s", "d", "f", "g", "h", "j", "k", "l"],
+      ["shift", "z", "x", "c", "v", "b", "n", "m", "backspace"],
+      ["close", ",", "space", ".", "return"],
+    ];
+    function label(k) {
+      return k === "shift" ? "⇧" : k === "backspace" ? "⌫" : k === "return" ? "return" : k === "space" ? "space" : k === "close" ? "⌄" : k;
+    }
+    function cls(k) {
+      if (k === "space") return "vkb-key space";
+      if (k === "shift" || k === "backspace" || k === "return" || k === "close") return "vkb-key wide";
+      return "vkb-key";
+    }
+    function ta() {
+      return document.getElementById("mail-input");
+    }
+    function build() {
+      if (built) return;
+      built = true;
+      el = document.createElement("div");
+      el.className = "vkb";
+      el.setAttribute("aria-hidden", "true");
+      ROWS.forEach(function (row) {
+        var r = document.createElement("div");
+        r.className = "vkb-row";
+        row.forEach(function (k) {
+          var b = document.createElement("div");
+          b.className = cls(k);
+          b.dataset.key = k;
+          b.textContent = label(k);
+          b.addEventListener("mousedown", function (e) {
+            e.preventDefault(); // never steal focus from the textarea
+          });
+          b.addEventListener("click", function () {
+            fire(k, b);
+          });
+          r.appendChild(b);
+        });
+        el.appendChild(r);
+      });
+      document.body.appendChild(el);
+      for (var i = 0; i < 2; i++) {
+        var t = document.createElement("div");
+        t.className = "vkb-tip";
+        document.body.appendChild(t);
+        tips[i] = t;
+      }
+    }
+    function setShift(v) {
+      shifted = v;
+      var sk = el && el.querySelector('[data-key="shift"]');
+      if (sk) sk.classList.toggle("active", shifted);
+    }
+    function insert(t, ch) {
+      var s = t.selectionStart,
+        e = t.selectionEnd;
+      if (s == null) {
+        t.value += ch;
+      } else {
+        t.value = t.value.slice(0, s) + ch + t.value.slice(e);
+        var p = s + ch.length;
+        try {
+          t.selectionStart = t.selectionEnd = p;
+        } catch (_) {}
+      }
+      t.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+    function back(t) {
+      var s = t.selectionStart,
+        e = t.selectionEnd;
+      if (s == null) t.value = t.value.slice(0, -1);
+      else if (s !== e) {
+        t.value = t.value.slice(0, s) + t.value.slice(e);
+        try {
+          t.selectionStart = t.selectionEnd = s;
+        } catch (_) {}
+      } else if (s > 0) {
+        t.value = t.value.slice(0, s - 1) + t.value.slice(s);
+        try {
+          t.selectionStart = t.selectionEnd = s - 1;
+        } catch (_) {}
+      }
+      t.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+    function fire(k, keyEl) {
+      var t = ta();
+      if (keyEl) {
+        keyEl.classList.add("kb-press");
+        setTimeout(function () {
+          keyEl.classList.remove("kb-press");
+        }, 130);
+      }
+      if (k === "shift") {
+        setShift(!shifted);
+        return;
+      }
+      if (k === "close") {
+        if (t) t.blur();
+        hide();
+        return;
+      }
+      if (!t) return;
+      t.focus();
+      if (k === "backspace") return back(t);
+      if (k === "space") return insert(t, " ");
+      if (k === "return") {
+        t.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
+        return;
+      }
+      insert(t, shifted ? k.toUpperCase() : k);
+      if (shifted) setShift(false); // one-shot caps
+    }
+    function clearHovers() {
+      if (!el) return;
+      var hs = el.querySelectorAll(".kb-hover");
+      for (var i = 0; i < hs.length; i++) hs[i].classList.remove("kb-hover");
+    }
+    function keyAt(x, y) {
+      var e = document.elementFromPoint(x, y);
+      var k = e && e.closest ? e.closest(".vkb-key") : null;
+      if (k) return k;
+      if (!el) return null; // magnetic snap to the nearest key
+      var keys = el.querySelectorAll(".vkb-key"),
+        best = null,
+        bd = 46 * 46;
+      for (var i = 0; i < keys.length; i++) {
+        var b = keys[i].getBoundingClientRect();
+        var nx = Math.max(b.left, Math.min(x, b.right)),
+          ny = Math.max(b.top, Math.min(y, b.bottom));
+        var dx = x - nx,
+          dy = y - ny,
+          d = dx * dx + dy * dy;
+        if (d < bd) {
+          bd = d;
+          best = keys[i];
+        }
+      }
+      return best;
+    }
+    function frame(hands) {
+      if (!isOpenFlag) return;
+      clearHovers();
+      for (var i = 0; i < 2; i++) {
+        var h = hands[i],
+          t = tips[i];
+        if (!h) {
+          if (t) t.style.opacity = 0;
+          hoverKey[i] = null;
+          continue;
+        }
+        if (t) {
+          t.style.transform = "translate(" + h.x + "px," + h.y + "px)";
+          t.style.opacity = 1;
+        }
+        var k = keyAt(h.x, h.y);
+        hoverKey[i] = k;
+        if (k) k.classList.add("kb-hover");
+      }
+    }
+    function press(i) {
+      var k = hoverKey[i];
+      if (k) fire(k.dataset.key, k);
+    }
+    function pokeTip(i, on) {
+      var t = tips[i];
+      if (t) t.classList.toggle("poke", !!on);
+    }
+    function show() {
+      build();
+      isOpenFlag = true;
+      el.classList.add("open");
+      var box = document.getElementById("mailterm");
+      if (box) box.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    function hide() {
+      if (!el) return;
+      isOpenFlag = false;
+      el.classList.remove("open");
+      clearHovers();
+      hoverKey = [null, null];
+      tips.forEach(function (t) {
+        if (t) t.style.opacity = 0;
+      });
+    }
+    return {
+      build: build,
+      show: show,
+      hide: hide,
+      isOpen: function () {
+        return isOpenFlag;
+      },
+      frame: frame,
+      press: press,
+      pokeTip: pokeTip,
+    };
+  })();
+
+  // In gesture mode, focusing the compose box raises the keyboard.
+  (function () {
+    var mi = document.getElementById("mail-input");
+    if (!mi) return;
+    mi.addEventListener("focus", function () {
+      if (activeMode === "gesture") Keyboard.show();
+    });
+    mi.addEventListener("blur", function () {
+      Keyboard.hide();
+    });
+  })();
+
   window.__ctrl = {
     clamp01: clamp01,
     dist: gDist,
@@ -284,8 +607,11 @@
     pinchRatio: gPinchRatio,
     scrollDelta: gScrollDelta,
     dragScroll: gDragScroll,
+    forwardSignal: gForwardSignal,
     clickAt: clickAt,
+    keyboard: Keyboard,
     G: G,
+    KB: KB,
   };
 
   async function startGesture() {
@@ -312,7 +638,7 @@
           delegate: "GPU",
         },
         runningMode: "VIDEO",
-        numHands: 1,
+        numHands: 2,
       });
     } catch (_) {
       setStatus("couldn't load the model. using trackpad.", false);
@@ -349,6 +675,93 @@
       hasScrolled = false, // did this pinch move the page? (then it's not a click)
       scrollCurVel = 0, // momentum glide after release, applied every render frame
       lastClickT = 0;
+
+    /* ---- keyboard mode: two hands point + poke to type ---- */
+    function newSlot() {
+      return {
+        haveAim: false,
+        aimX: 0,
+        aimY: 0,
+        euro: makeOneEuro(1.0, 0.007, 1.0),
+        baseline: null,
+        prevS: null,
+        prevT: null,
+        fsm: "idle",
+        lastFireT: 0,
+        pinch: false,
+      };
+    }
+    var slot = [newSlot(), newSlot()];
+    function resetSlot(k) {
+      slot[k] = newSlot();
+      Keyboard.pokeTip(k, false);
+    }
+
+    // returns true on the frame a deliberate forward poke fires
+    function detectPoke(k, Lnorm, Wworld, tMs) {
+      var st = slot[k];
+      var raw = gForwardSignal(Lnorm, Wworld);
+      var s = st.euro(raw, tMs);
+      var C = Wworld ? KB.world : KB.norm;
+      var dt = st.prevT == null ? 1 / 30 : (tMs - st.prevT) / 1000;
+      if (dt <= 0) dt = 1 / 30;
+      var vel = st.prevS == null ? 0 : (s - st.prevS) / dt;
+      st.prevS = s;
+      st.prevT = tMs;
+      if (st.baseline == null) st.baseline = s;
+      var fired = false;
+      if (st.fsm === "idle") {
+        st.baseline += KB.BASELINE_EMA * (s - st.baseline); // track drift only while idle
+        if (s - st.baseline >= C.FIRE_DISP && vel >= C.FIRE_VEL) {
+          fired = true;
+          st.fsm = "refractory";
+          st.lastFireT = tMs;
+        }
+      } else if (tMs - st.lastFireT >= KB.REFRACTORY_MS && s - st.baseline <= C.RELEASE_DISP) {
+        st.fsm = "idle"; // require the finger to retract before the next tap
+      }
+      Keyboard.pokeTip(k, s - st.baseline > C.FIRE_DISP * 0.5);
+      return fired;
+    }
+
+    function handleKeyboardHands(res, W, H) {
+      pinching = false; // the keyboard owns the hands; no scroll/click here
+      scrollCurVel = 0;
+      var tMs = performance.now();
+      var hands = [null, null],
+        fires = [false, false],
+        seen = [false, false];
+      var slots = assignSlots(res);
+      for (var s = 0; s < slots.length; s++) {
+        var idx = slots[s].i,
+          k = slots[s].slot;
+        seen[k] = true;
+        var Ln = res.landmarks[idx];
+        var Wn = res.worldLandmarks && res.worldLandmarks[idx] ? res.worldLandmarks[idx] : null;
+        var st = slot[k];
+        var tip = gMapCursor(Ln[8], W, H, KB.GAIN);
+        if (!st.haveAim) {
+          st.aimX = tip.x;
+          st.aimY = tip.y;
+          st.haveAim = true;
+        } else {
+          st.aimX += KB.SMOOTH * (tip.x - st.aimX);
+          st.aimY += KB.SMOOTH * (tip.y - st.aimY);
+        }
+        hands[k] = { x: st.aimX, y: st.aimY };
+        var ratio = gPinchRatio(Ln); // pinch = reliable fallback press
+        if (!st.pinch && ratio < G.PINCH_ON) {
+          st.pinch = true;
+          fires[k] = true;
+        } else if (st.pinch && ratio > G.PINCH_OFF) {
+          st.pinch = false;
+        }
+        if (detectPoke(k, Ln, Wn, tMs)) fires[k] = true;
+      }
+      for (var m = 0; m < 2; m++) if (!seen[m]) resetSlot(m);
+      Keyboard.frame(hands);
+      for (var f = 0; f < 2; f++) if (fires[f]) Keyboard.press(f);
+    }
 
     // The hand IS the cursor: the skeleton is drawn at true size translated so
     // the index fingertip sits exactly at the pointer, and that fingertip is
@@ -479,9 +892,19 @@
           } catch (_) {
             res = null;
           }
-          lastLandmarks = res && res.landmarks && res.landmarks.length ? res.landmarks[0] : null;
-          if (lastLandmarks) processHand(lastLandmarks, W, H);
-          else {
+          var haveHands = res && res.landmarks && res.landmarks.length;
+          lastLandmarks = haveHands ? res.landmarks[0] : null;
+          if (Keyboard.isOpen()) {
+            if (haveHands) handleKeyboardHands(res, W, H);
+            else {
+              Keyboard.frame([null, null]);
+              resetSlot(0);
+              resetSlot(1);
+              setStatus("point at the keys · poke or pinch to type · esc to exit", true);
+            }
+          } else if (lastLandmarks) {
+            processHand(lastLandmarks, W, H);
+          } else {
             if (pinching) pinching = false;
             setStatus("show me your hand ✋", true);
           }
@@ -497,7 +920,8 @@
         scrollCurVel = 0;
       }
 
-      if (lastLandmarks) drawSkeleton(lastLandmarks, W, H);
+      // Skeleton only in cursor mode; the keyboard shows its own fingertip dots.
+      if (!Keyboard.isOpen() && lastLandmarks) drawSkeleton(lastLandmarks, W, H);
     }
     rafId = requestAnimationFrame(loop);
     stopFns.push(function () {
