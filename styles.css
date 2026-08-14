@@ -76,7 +76,8 @@ html { overflow-x: clip; scroll-behavior: smooth; }
 
 body {
   font-family: var(--font-body);
-  background: var(--paper);
+  /* a subtle wash of the theme colour over the paper */
+  background: color-mix(in srgb, var(--accent) 5%, var(--paper));
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
   transition: background-color 0.35s, color 0.35s;
@@ -121,10 +122,10 @@ button { font: inherit; background: none; border: none; color: inherit; cursor: 
   width: 2.15rem;
   height: 2.15rem;
   border-radius: 8px;
-  color: var(--ink-soft);
-  transition: color 0.2s, background-color 0.2s;
+  color: var(--accent);
+  transition: color 0.3s, background-color 0.2s;
 }
-.icon-link:hover { color: var(--ink); background: var(--paper-deep); }
+.icon-link:hover { color: var(--accent); background: var(--accent-soft); }
 .icon-link svg { width: 1.05rem; height: 1.05rem; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 
 /* ------------------------------ dynamic island --------------------------- */
@@ -137,11 +138,11 @@ button { font: inherit; background: none; border: none; color: inherit; cursor: 
   z-index: 50;
   width: 172px;
   border-radius: 22px;
-  background: var(--island);
+  background: var(--accent);
   color: var(--island-ink);
   box-shadow: 0 14px 34px rgba(0, 0, 0, 0.32), 0 4px 10px rgba(0, 0, 0, 0.2);
   overflow: hidden;
-  transition: width 0.5s var(--spring), border-radius 0.5s var(--spring);
+  transition: width 0.5s var(--spring), border-radius 0.5s var(--spring), background-color 0.35s;
 }
 .island.open { width: min(92vw, 360px); border-radius: 26px; }
 
@@ -304,7 +305,7 @@ html.no-js .island { display: none; }
 
 .hero { padding: 4.5rem 0 1rem; }
 
-.eyebrow { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.14em; color: var(--ink-faint); }
+.eyebrow { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.14em; color: var(--accent); transition: color 0.35s; }
 
 .name {
   display: block;
@@ -312,8 +313,9 @@ html.no-js .island { display: none; }
   font-size: clamp(2.9rem, 8.5vw, 4.6rem);
   line-height: 1.05;
   letter-spacing: -0.035em;
-  color: var(--ink);
+  color: var(--accent);
   margin-top: 0.6rem;
+  transition: color 0.35s;
 }
 
 
@@ -334,8 +336,9 @@ html.no-js .island { display: none; }
   font-family: var(--font-mono);
   font-size: 0.72rem;
   letter-spacing: 0.16em;
-  color: var(--ink-faint);
+  color: var(--accent);
   margin-bottom: 1rem;
+  transition: color 0.35s;
 }
 
 .lead { font-size: 1.05rem; line-height: 1.7; color: var(--ink-soft); max-width: 58ch; }

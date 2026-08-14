@@ -756,8 +756,9 @@
   function targetEyes() {
     var focused = document.activeElement === input;
     if (!input.value) {
-      eyeTX = 0;
-      eyeTY = focused ? 1.4 : 0.5; // glance down at the box when focused
+      // the moment the box is entered, drop the eyes down to look into it
+      eyeTX = focused ? -1 : 0;
+      eyeTY = focused ? 2.4 : 0.5;
       return;
     }
     var c = caretPos(input);
