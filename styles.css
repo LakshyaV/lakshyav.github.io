@@ -925,6 +925,15 @@ html.entry-done .entry { display: none; }
   transition: opacity 0.4s var(--ease), transform 0.55s var(--spring);
 }
 .vkb.open { display: flex; opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+.vkb-hint {
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.03em;
+  color: var(--ink-soft);
+  margin: 0 0 2px;
+  opacity: 0.85;
+}
 .vkb-row { display: flex; gap: 10px; justify-content: center; }
 .vkb-key {
   position: relative;

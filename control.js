@@ -222,6 +222,10 @@
       el = document.createElement("div");
       el.className = "vkb";
       el.setAttribute("aria-hidden", "true");
+      var hint = document.createElement("div");
+      hint.className = "vkb-hint";
+      hint.textContent = "point at a key, then pinch 👌 to press";
+      el.appendChild(hint);
       ROWS.forEach(function (row) {
         var r = document.createElement("div");
         r.className = "vkb-row";
@@ -515,7 +519,7 @@
           Keyboard.frame([null, null]);
           resetSlot(0);
           resetSlot(1);
-          setStatus("point at the keys · poke or pinch to type · esc to stop", true);
+          setStatus("point at a key · pinch 👌 to press (or poke) · esc to stop", true);
         }
       }
     }
@@ -571,7 +575,7 @@
     resetSlot(1);
     mailInput.focus();
     Keyboard.show();
-    setStatus("point at the keys · poke or pinch to type · esc to stop", true);
+    setStatus("point at a key · pinch 👌 to press (or poke) · esc to stop", true);
     lastVideoTime = -1;
     rafId = requestAnimationFrame(loop);
     stopFns.push(function () {
