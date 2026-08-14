@@ -711,7 +711,8 @@
   }
 
   /* ---- the peeking creature's eyes follow the caret as you type ---- */
-  var eyeGs = form.querySelectorAll(".peek-eye-g");
+  var wrap = form.closest(".compose-wrap") || document;
+  var eyeGs = wrap.querySelectorAll(".peek-eye-g");
   var eyeReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   var mirror = null;
   var eyeTX = 0, eyeTY = 0.5, eyeX = 0, eyeY = 0.5, eyeRAF = 0, eyeHold = 0;

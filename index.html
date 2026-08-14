@@ -264,50 +264,60 @@
         <a class="hl hl-blue" href="https://www.linkedin.com/in/lakshyav/" target="_blank" rel="noopener noreferrer">linkedin</a>
       </div>
 
-      <form class="compose" id="mailterm" autocomplete="off">
-        <span class="compose-peek" aria-hidden="true">
-          <svg viewBox="0 0 90 82">
+      <div class="compose-wrap">
+        <!-- back layer: body sits BEHIND the card so its lower half is hidden -->
+        <span class="peek peek-back" aria-hidden="true">
+          <svg viewBox="0 0 90 90">
             <defs>
               <radialGradient id="peekBody" cx="37%" cy="28%" r="80%">
                 <stop offset="0%" stop-color="#ffffff" />
                 <stop offset="52%" stop-color="#f1f0ea" />
                 <stop offset="100%" stop-color="#d3d2c8" />
               </radialGradient>
-              <radialGradient id="peekHand" cx="42%" cy="30%" r="82%">
-                <stop offset="0%" stop-color="#f3f2ec" />
-                <stop offset="100%" stop-color="#cbcabf" />
+              <radialGradient id="peekHand" cx="42%" cy="26%" r="82%">
+                <stop offset="0%" stop-color="#f6f5ef" />
+                <stop offset="100%" stop-color="#c7c6bb" />
               </radialGradient>
             </defs>
-            <rect class="peek-hand" x="15" y="55" width="17" height="22" rx="8.5" />
-            <rect class="peek-hand" x="58" y="55" width="17" height="22" rx="8.5" />
-            <circle class="peek-body" cx="30" cy="12" r="7" />
-            <circle class="peek-body" cx="60" cy="12" r="7" />
-            <ellipse class="peek-body" cx="45" cy="37" rx="29" ry="31" />
-            <ellipse class="peek-spec" cx="33" cy="20" rx="8.5" ry="5.2" />
-            <ellipse class="peek-blush" cx="27" cy="47" rx="5" ry="2.9" />
-            <ellipse class="peek-blush" cx="63" cy="47" rx="5" ry="2.9" />
+            <circle class="peek-body" cx="30" cy="14" r="7.5" />
+            <circle class="peek-body" cx="60" cy="14" r="7.5" />
+            <ellipse class="peek-body" cx="45" cy="40" rx="30" ry="32" />
+            <ellipse class="peek-spec" cx="33" cy="22" rx="9" ry="5.4" />
+            <ellipse class="peek-blush" cx="26" cy="50" rx="5.2" ry="3" />
+            <ellipse class="peek-blush" cx="64" cy="50" rx="5.2" ry="3" />
             <g class="peek-eye-g">
-              <ellipse class="peek-eye" cx="37" cy="38" rx="4.4" ry="5.4" />
-              <circle class="peek-glint" cx="38.6" cy="36.1" r="1.5" />
+              <ellipse class="peek-eye" cx="37" cy="41" rx="4.6" ry="5.6" />
+              <circle class="peek-glint" cx="38.7" cy="39" r="1.5" />
             </g>
             <g class="peek-eye-g">
-              <ellipse class="peek-eye" cx="53" cy="38" rx="4.4" ry="5.4" />
-              <circle class="peek-glint" cx="54.6" cy="36.1" r="1.5" />
+              <ellipse class="peek-eye" cx="53" cy="41" rx="4.6" ry="5.6" />
+              <circle class="peek-glint" cx="54.7" cy="39" r="1.5" />
             </g>
-            <path class="peek-mouth" d="M40 48 Q45 53 50 48" />
+            <path class="peek-mouth" d="M40 51 Q45 56 50 51" />
           </svg>
         </span>
-        <div class="compose-head">
-          <span class="compose-label">compose</span>
-          <span class="compose-to">to lakyvasu22@gmail.com</span>
-        </div>
-        <textarea id="mail-input" class="compose-input" rows="2"
-          placeholder="write something…" spellcheck="false"></textarea>
-        <div class="compose-foot">
-          <span class="compose-hint" id="mail-hint">⏎ to send &nbsp;·&nbsp; ⇧⏎ for a new line</span>
-          <button type="submit" class="compose-send" id="mail-send">send</button>
-        </div>
-      </form>
+
+        <form class="compose" id="mailterm" autocomplete="off">
+          <div class="compose-head">
+            <span class="compose-label">compose</span>
+            <span class="compose-to">to lakyvasu22@gmail.com</span>
+          </div>
+          <textarea id="mail-input" class="compose-input" rows="2"
+            placeholder="write something…" spellcheck="false"></textarea>
+          <div class="compose-foot">
+            <span class="compose-hint" id="mail-hint">⏎ to send &nbsp;·&nbsp; ⇧⏎ for a new line</span>
+            <button type="submit" class="compose-send" id="mail-send">send</button>
+          </div>
+        </form>
+
+        <!-- front layer: paws drape OVER the top edge, in front of the card -->
+        <span class="peek peek-front" aria-hidden="true">
+          <svg viewBox="0 0 90 90">
+            <rect class="peek-hand" x="13" y="58" width="18" height="20" rx="9" />
+            <rect class="peek-hand" x="59" y="58" width="18" height="20" rx="9" />
+          </svg>
+        </span>
+      </div>
     </section>
 
   </main>
