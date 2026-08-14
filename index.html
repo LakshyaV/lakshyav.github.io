@@ -27,38 +27,12 @@
 </head>
 <body>
 
-  <!-- ====================== ENTRY: pick a control mode ======================
-       The whole site is about machines reading people, so the door offers to
-       be opened that way. The hand mode runs entirely in-browser via a
-       pre-trained MediaPipe model; no video leaves the device. -->
-  <div class="entry" id="entry" role="dialog" aria-modal="true" aria-label="Choose how to control the page">
-    <div class="entry-card">
-      <p class="entry-eyebrow">before you scroll</p>
-      <h2 class="entry-title">how do you want to <em>control</em> this page?</h2>
-      <p class="entry-sub">i build interfaces that read people. try controlling this page with your hand — or just use your trackpad.</p>
-      <div class="entry-modes">
-        <button class="mode" data-mode="trackpad">
-          <span class="mode-icon" aria-hidden="true">🖱️</span>
-          <span class="mode-name">trackpad</span>
-          <span class="mode-desc">browse the normal way</span>
-        </button>
-        <button class="mode" data-mode="gesture">
-          <span class="mode-icon" aria-hidden="true">✋</span>
-          <span class="mode-name">hand gestures</span>
-          <span class="mode-desc">your fingertip is the cursor · pinch to click, pinch + move your hand to scroll</span>
-          <span class="mode-cam">needs camera</span>
-        </button>
-      </div>
-      <p class="entry-privacy">the camera mode runs entirely in your browser. no video is uploaded or stored — it never leaves your device.</p>
-    </div>
-  </div>
-
-  <!-- live control HUD, shown only while a camera mode is running -->
+  <!-- live camera HUD, shown only during a hand-typing session -->
   <div class="control-hud" id="control-hud" hidden>
     <video class="hud-cam" id="hud-cam" playsinline muted></video>
     <div class="hud-body">
       <span class="hud-status" id="hud-status">starting camera…</span>
-      <button class="hud-exit" id="hud-exit">use trackpad instead</button>
+      <button class="hud-exit" id="hud-exit">stop</button>
     </div>
   </div>
 

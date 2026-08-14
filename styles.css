@@ -842,6 +842,49 @@ html.entry-done .entry { display: none; }
 
 /* --------------------- vision-pro glass keyboard ------------------------- */
 
+/* the little "try typing with your hands" invite under the compose box */
+.hand-cta {
+  position: absolute;
+  top: calc(100% + 12px);
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.45rem 0.55rem 0.45rem 0.95rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--paper-deep) 45%, var(--paper));
+  border: 1px solid var(--rule);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.05);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-50%) translateY(8px);
+  transition: opacity 0.3s var(--ease), transform 0.4s var(--spring);
+  z-index: 6;
+}
+.hand-cta.show { opacity: 1; pointer-events: auto; transform: translateX(-50%) translateY(0); }
+.hand-cta-try {
+  font-family: var(--font-body);
+  font-size: 0.84rem;
+  font-weight: 500;
+  color: var(--accent);
+  cursor: pointer;
+}
+.hand-cta-try:hover { opacity: 0.75; }
+.hand-cta-sub { font-family: var(--font-mono); font-size: 0.58rem; letter-spacing: 0.04em; color: var(--ink-faint); }
+.hand-cta-x {
+  display: grid;
+  place-items: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 50%;
+  font-size: 1.05rem;
+  line-height: 1;
+  color: var(--ink-faint);
+  cursor: pointer;
+}
+.hand-cta-x:hover { color: var(--ink); background: var(--paper-deep); }
+
 /* blurred, dimmed backdrop while the keyboard is up — everything behind it
    (page, header, island) goes soft so the box + keys pop */
 .kb-scrim {
