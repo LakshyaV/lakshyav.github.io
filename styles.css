@@ -546,6 +546,7 @@ a.hl:hover { background: linear-gradient(to top, var(--mark, var(--accent-soft))
 }
 .compose-hint { font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.03em; color: var(--ink-faint); white-space: nowrap; }
 .compose-hint.sent { color: var(--accent); }
+.compose-hint.err { color: #d0463b; }
 .compose-send {
   font-family: var(--font-body);
   font-size: 0.82rem;

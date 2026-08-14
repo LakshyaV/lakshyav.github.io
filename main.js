@@ -610,11 +610,12 @@
   }
 })();
 
-/* ------------------------------ email terminal ---------------------------
-   A tiny shell that composes a real message. There is no server here, so
-   "send" hands the typed text to the visitor's own mail client, pre-addressed
-   to the inbox — which genuinely delivers it. Enter sends, Shift+Enter adds a
-   line, and the box grows with the text. */
+/* ------------------------------ compose / send ---------------------------
+   A static site has no server of its own to send from, so the message is
+   POSTed to FormSubmit, a keyless form-to-email relay that forwards it
+   straight to the inbox (the owner confirms the address once by clicking a
+   link in the first email). No mail app is opened. Enter sends, Shift+Enter
+   adds a line, and the box grows with the text. */
 (function () {
   "use strict";
   var form = document.getElementById("mailterm");
@@ -623,44 +624,90 @@
   var hint = document.getElementById("mail-hint");
   var send = document.getElementById("mail-send");
   var TO = "lakyvasu22@gmail.com";
+  var ENDPOINT = "https://formsubmit.co/ajax/" + TO;
   var hintDefault = hint ? hint.textContent : "";
   var hintTimer = 0;
+  var sending = false;
 
   function autogrow() {
     input.style.height = "auto";
     input.style.height = Math.min(input.scrollHeight, 220) + "px";
   }
 
-  function flashHint(text, sent) {
+  function setHint(text, tone) {
     if (!hint) return;
     hint.textContent = text;
-    hint.classList.toggle("sent", !!sent);
+    hint.classList.toggle("sent", tone === "ok");
+    hint.classList.toggle("err", tone === "err");
     clearTimeout(hintTimer);
-    hintTimer = setTimeout(function () {
-      hint.textContent = hintDefault;
-      hint.classList.remove("sent");
-    }, 4000);
+    if (tone) {
+      hintTimer = setTimeout(function () {
+        hint.textContent = hintDefault;
+        hint.classList.remove("sent", "err");
+      }, 5000);
+    }
+  }
+
+  function shake() {
+    form.classList.remove("shake");
+    void form.offsetWidth; // reflow so the animation can retrigger
+    form.classList.add("shake");
   }
 
   function submit() {
+    if (sending) return;
     var body = input.value.trim();
     if (!body) {
-      form.classList.remove("shake");
-      // reflow so the animation can retrigger
-      void form.offsetWidth;
-      form.classList.add("shake");
+      shake();
       input.focus();
       return;
     }
-    // first line doubles as the subject when it's short; else a friendly default
     var firstLine = body.split("\n")[0];
-    var subject = firstLine.length <= 60 ? firstLine : "hello from your site";
-    var href =
-      "mailto:" + TO +
-      "?subject=" + encodeURIComponent(subject) +
-      "&body=" + encodeURIComponent(body);
-    flashHint("opening your mail app…", true);
-    window.location.href = href;
+    var subject = firstLine.length <= 60 ? firstLine : "a message from your site";
+
+    sending = true;
+    if (send) send.disabled = true;
+    setHint("sending…", null);
+
+    fetch(ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({
+        message: body,
+        _subject: subject,
+        _template: "table",
+        _captcha: "false",
+      }),
+    })
+      .then(function (r) {
+        return r.json().catch(function () {
+          return {};
+        });
+      })
+      .then(function (data) {
+        var msg = (data && data.message) || "";
+        var ok = data && (data.success === true || data.success === "true");
+        if (ok) {
+          input.value = "";
+          autogrow();
+          setHint("sent ✓ — thanks, i'll read it", "ok");
+          return;
+        }
+        // one-time relay step on the owner's side; visitors never see it once activated
+        if (/activat/i.test(msg)) {
+          setHint("check your email to activate, then resend", "ok");
+          return;
+        }
+        throw new Error(msg || "failed");
+      })
+      .catch(function () {
+        setHint("couldn't send — try again in a sec", "err");
+        shake();
+      })
+      .finally(function () {
+        sending = false;
+        if (send) send.disabled = false;
+      });
   }
 
   input.addEventListener("input", autogrow);
