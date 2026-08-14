@@ -264,20 +264,16 @@
         <a class="hl hl-blue" href="https://www.linkedin.com/in/lakshyav/" target="_blank" rel="noopener noreferrer">linkedin</a>
       </div>
 
-      <form class="mailterm" id="mailterm" autocomplete="off">
-        <div class="mailterm-bar">
-          <span class="mt-dot mt-red"></span>
-          <span class="mt-dot mt-yellow"></span>
-          <span class="mt-dot mt-green"></span>
-          <span class="mt-title">✉&nbsp;&nbsp;compose — lakyvasu22@gmail.com</span>
+      <form class="compose" id="mailterm" autocomplete="off">
+        <div class="compose-head">
+          <span class="compose-label">compose</span>
+          <span class="compose-to">to lakyvasu22@gmail.com</span>
         </div>
-        <div class="mailterm-body">
-          <textarea id="mail-input" class="mailterm-input" rows="1"
-            placeholder="write something…" spellcheck="false"></textarea>
-          <div class="mailterm-foot">
-            <span class="mt-hint" id="mail-hint">⏎ send &nbsp;·&nbsp; ⇧⏎ new line</span>
-            <button type="submit" class="mt-send" id="mail-send">send&nbsp;↵</button>
-          </div>
+        <textarea id="mail-input" class="compose-input" rows="2"
+          placeholder="write something…" spellcheck="false"></textarea>
+        <div class="compose-foot">
+          <span class="compose-hint" id="mail-hint">⏎ to send &nbsp;·&nbsp; ⇧⏎ for a new line</span>
+          <button type="submit" class="compose-send" id="mail-send">send</button>
         </div>
       </form>
     </section>
