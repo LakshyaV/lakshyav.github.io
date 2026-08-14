@@ -494,6 +494,21 @@ a.hl:hover { background: linear-gradient(to top, var(--mark, var(--accent-soft))
 
 /* compose — a paper card that drafts a mail, matching the github card */
 .compose-wrap { position: relative; margin-top: 5.2rem; max-width: 30rem; }
+/* while the glass keyboard is up, float the box near the top so it stays visible */
+.compose-wrap.kb-floating {
+  position: fixed;
+  top: 116px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(30rem, 92vw);
+  margin: 0;
+  z-index: 45;
+  animation: kb-float-in 0.4s var(--spring);
+}
+@keyframes kb-float-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
 .compose {
   position: relative;
   z-index: 2; /* card sits in front of the creature's body, hiding its lower half */
@@ -827,35 +842,41 @@ html.entry-done .entry { display: none; }
 .vkb {
   position: fixed;
   left: 50%;
-  bottom: 22px;
+  bottom: 26px;
   z-index: 62;
-  width: min(94vw, 780px);
+  width: min(94vw, 800px);
   display: none;
   flex-direction: column;
-  gap: 9px;
-  padding: 16px;
-  border-radius: 26px;
-  background: color-mix(in srgb, var(--paper) 42%, transparent);
-  backdrop-filter: blur(26px) saturate(1.7);
-  -webkit-backdrop-filter: blur(26px) saturate(1.7);
-  border: 1px solid color-mix(in srgb, var(--paper) 65%, transparent);
-  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.32), 0 4px 14px rgba(0, 0, 0, 0.18),
-    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  gap: 10px;
+  padding: 18px;
+  border-radius: 30px;
+  /* frosted glass: a thin veil of paper over a heavy blur, with a soft sheen */
+  background:
+    linear-gradient(155deg, color-mix(in srgb, var(--paper) 34%, transparent), color-mix(in srgb, var(--paper) 16%, transparent));
+  backdrop-filter: blur(34px) saturate(1.9) brightness(1.05);
+  -webkit-backdrop-filter: blur(34px) saturate(1.9) brightness(1.05);
+  border: 1px solid color-mix(in srgb, var(--paper) 55%, transparent);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.34), 0 6px 20px rgba(0, 0, 0, 0.18),
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.6), inset 0 -1px 0 rgba(0, 0, 0, 0.05);
   opacity: 0;
-  transform: translateX(-50%) translateY(26px) scale(0.98);
+  transform: translateX(-50%) translateY(30px) scale(0.97);
   transform-origin: bottom center;
-  transition: opacity 0.35s var(--ease), transform 0.5s var(--spring);
+  transition: opacity 0.4s var(--ease), transform 0.55s var(--spring);
 }
 .vkb.open { display: flex; opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
-.vkb-row { display: flex; gap: 9px; justify-content: center; }
+.vkb-row { display: flex; gap: 10px; justify-content: center; }
 .vkb-key {
+  position: relative;
   flex: 1 1 0;
   min-width: 0;
-  height: 54px;
-  border-radius: 14px;
-  background: color-mix(in srgb, var(--paper) 70%, transparent);
-  border: 1px solid color-mix(in srgb, var(--paper) 60%, transparent);
-  box-shadow: 0 2px 7px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.55);
+  height: 56px;
+  border-radius: 15px;
+  /* each key is its own little pane of glass */
+  background:
+    linear-gradient(160deg, color-mix(in srgb, var(--paper) 62%, transparent), color-mix(in srgb, var(--paper) 34%, transparent));
+  border: 1px solid color-mix(in srgb, var(--paper) 45%, transparent);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.7),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.04);
   color: var(--ink);
   font-family: var(--font-body);
   font-size: 1.08rem;
@@ -865,23 +886,24 @@ html.entry-done .entry { display: none; }
   cursor: pointer;
   user-select: none;
   -webkit-user-select: none;
-  transition: transform 0.09s var(--spring), background-color 0.15s, box-shadow 0.15s, color 0.15s;
+  transition: transform 0.1s var(--spring), background 0.15s, box-shadow 0.18s, color 0.15s;
 }
-.vkb-key.wide { flex-grow: 1.7; font-size: 0.82rem; letter-spacing: 0.02em; }
+.vkb-key.wide { flex-grow: 1.7; font-size: 0.82rem; letter-spacing: 0.02em; color: var(--ink-soft); }
 .vkb-key.space { flex-grow: 7; }
 .vkb-key.kb-hover {
-  background: color-mix(in srgb, var(--paper) 92%, transparent);
-  box-shadow: 0 0 0 2.5px var(--accent), 0 10px 22px rgba(0, 0, 0, 0.22);
-  transform: translateY(-3px) scale(1.04);
+  background: linear-gradient(160deg, color-mix(in srgb, var(--paper) 90%, transparent), color-mix(in srgb, var(--paper) 64%, transparent));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 80%, transparent),
+    0 12px 26px rgba(0, 0, 0, 0.22), 0 0 24px var(--accent-soft), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  transform: translateY(-4px) scale(1.05);
   z-index: 1;
 }
 .vkb-key.kb-press {
   background: var(--accent);
   color: var(--paper);
-  transform: translateY(1px) scale(0.93);
-  box-shadow: 0 0 0 2.5px var(--accent), 0 2px 6px rgba(0, 0, 0, 0.2);
+  transform: translateY(1px) scale(0.92);
+  box-shadow: 0 0 0 2px var(--accent), 0 0 26px var(--accent), inset 0 1px 4px rgba(0, 0, 0, 0.25);
 }
-.vkb-key.active { background: var(--accent); color: var(--paper); box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.25); }
+.vkb-key.active { background: var(--accent); color: var(--paper); box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.3); }
 
 /* one glowing fingertip pointer per detected hand, above the keys */
 .vkb-tip {

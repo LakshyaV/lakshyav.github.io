@@ -289,8 +289,8 @@
      with hysteresis + a refractory period + a required retract. Pinch is kept
      as a reliable fallback. Constants from research; tune on real hardware. */
   var KB = {
-    GAIN: 1.55, // pointing amplification over the keys
-    SMOOTH: 0.55, // aim EMA
+    GAIN: 1.12, // pointing amplification over the keys — low so it's easy to control
+    SMOOTH: 0.4, // aim EMA — lower = steadier (more smoothing), less twitchy
     REFRACTORY_MS: 220, // min gap between key presses
     BASELINE_EMA: 0.02, // slow drift tracking of the resting finger extension
     // metric from worldLandmarks (metres) — distance-invariant, preferred
@@ -558,17 +558,24 @@
       var t = tips[i];
       if (t) t.classList.toggle("poke", !!on);
     }
+    function wrap() {
+      var box = document.getElementById("mailterm");
+      return box && box.closest ? box.closest(".compose-wrap") : null;
+    }
     function show() {
       build();
       isOpenFlag = true;
       el.classList.add("open");
-      var box = document.getElementById("mailterm");
-      if (box) box.scrollIntoView({ behavior: "smooth", block: "start" });
+      // float the compose box up so it stays visible above the keyboard
+      var w = wrap();
+      if (w) w.classList.add("kb-floating");
     }
     function hide() {
       if (!el) return;
       isOpenFlag = false;
       el.classList.remove("open");
+      var w = wrap();
+      if (w) w.classList.remove("kb-floating");
       clearHovers();
       hoverKey = [null, null];
       tips.forEach(function (t) {
