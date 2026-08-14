@@ -384,6 +384,7 @@
   /* ===================== the glass keyboard ===================== */
   var Keyboard = (function () {
     var el = null,
+      scrim = null,
       tips = [null, null],
       built = false,
       shifted = false,
@@ -410,6 +411,11 @@
     function build() {
       if (built) return;
       built = true;
+      // blurred backdrop that dims the whole page behind the keyboard + box
+      scrim = document.createElement("div");
+      scrim.className = "kb-scrim";
+      scrim.setAttribute("aria-hidden", "true");
+      document.body.appendChild(scrim);
       el = document.createElement("div");
       el.className = "vkb";
       el.setAttribute("aria-hidden", "true");
@@ -566,6 +572,7 @@
       build();
       isOpenFlag = true;
       el.classList.add("open");
+      if (scrim) scrim.classList.add("open");
       // float the compose box up so it stays visible above the keyboard
       var w = wrap();
       if (w) w.classList.add("kb-floating");
@@ -574,6 +581,7 @@
       if (!el) return;
       isOpenFlag = false;
       el.classList.remove("open");
+      if (scrim) scrim.classList.remove("open");
       var w = wrap();
       if (w) w.classList.remove("kb-floating");
       clearHovers();
