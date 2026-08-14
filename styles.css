@@ -492,7 +492,7 @@ a.hl:hover { background: linear-gradient(to top, var(--mark, var(--accent-soft))
 /* compose — a paper card that drafts a mail, matching the github card */
 .compose {
   position: relative;
-  margin-top: 3.6rem;
+  margin-top: 5.4rem;
   max-width: 30rem;
   padding: 1.1rem 1.25rem 1rem;
   border: 1px solid var(--rule);
@@ -502,37 +502,41 @@ a.hl:hover { background: linear-gradient(to top, var(--mark, var(--accent-soft))
   transition: border-color 0.2s, box-shadow 0.25s var(--ease);
 }
 
-/* a little paper creature peeking over the top edge */
+/* a plump 3D creature peeking over the top edge, centered on the box */
 .compose-peek {
   position: absolute;
-  left: 28px;
+  left: 50%;
   top: 1px;
-  width: 58px;
+  width: 92px;
+  margin-left: -46px;
   pointer-events: none;
   z-index: 2;
-  transform: translateY(-80%);
+  transform: translateY(-78%);
   transform-origin: bottom center;
   transition: transform 0.35s var(--spring);
-  animation: peek-bob 4.5s ease-in-out infinite;
+  animation: peek-bob 4.6s ease-in-out infinite;
 }
-.compose-peek svg { width: 100%; height: auto; display: block; overflow: visible; }
-.peek-body,
-.peek-hand {
-  fill: color-mix(in srgb, var(--paper-deep) 40%, var(--paper));
-  stroke: var(--ink);
-  stroke-width: 2.4;
-  stroke-linejoin: round;
+.compose-peek svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  overflow: visible;
+  filter: drop-shadow(0 5px 6px rgba(0, 0, 0, 0.22)) drop-shadow(0 1px 1px rgba(0, 0, 0, 0.12));
 }
-.peek-eye { fill: var(--ink); transform-box: fill-box; transform-origin: center; animation: peek-blink 5.6s ease-in-out infinite; }
-.peek-glint { fill: var(--paper); }
-.peek-mouth { fill: none; stroke: var(--ink); stroke-width: 2.2; stroke-linecap: round; }
+.peek-body { fill: url(#peekBody); stroke: #c7c6bc; stroke-width: 1.2; stroke-linejoin: round; }
+.peek-hand { fill: url(#peekHand); stroke: #c7c6bc; stroke-width: 1.2; }
+.peek-spec { fill: #ffffff; opacity: 0.65; }
+.peek-eye-g { transition: transform 0.05s linear; }
+.peek-eye { fill: #2b2b2b; transform-box: fill-box; transform-origin: center; animation: peek-blink 5.6s ease-in-out infinite; }
+.peek-glint { fill: #ffffff; }
+.peek-mouth { fill: none; stroke: #2b2b2b; stroke-width: 2.2; stroke-linecap: round; }
 .peek-blush { fill: #ff9ec4; opacity: 0.5; }
 /* when the box is focused the creature perks up, leans in, and grins */
-.compose:focus-within .compose-peek { animation: none; transform: translateY(-96%) rotate(-3deg); }
-.compose:focus-within .peek-mouth { d: path("M39 46 Q45 54 51 46"); }
+.compose:focus-within .compose-peek { animation: none; transform: translateY(-90%) rotate(-2deg); }
+.compose:focus-within .peek-mouth { d: path("M39 47 Q45 55 51 47"); }
 @keyframes peek-bob {
-  0%, 100% { transform: translateY(-80%); }
-  50% { transform: translateY(-84%); }
+  0%, 100% { transform: translateY(-78%); }
+  50% { transform: translateY(-82%); }
 }
 @keyframes peek-blink {
   0%, 90%, 100% { transform: scaleY(1); }

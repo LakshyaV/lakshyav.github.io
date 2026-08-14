@@ -710,6 +710,89 @@
       });
   }
 
+  /* ---- the peeking creature's eyes follow the caret as you type ---- */
+  var eyeGs = form.querySelectorAll(".peek-eye-g");
+  var eyeReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var mirror = null;
+  var eyeTX = 0, eyeTY = 0.5, eyeX = 0, eyeY = 0.5, eyeRAF = 0, eyeHold = 0;
+  var EYE_MX = 3.6, EYE_MY_BASE = 1.0, EYE_MY_RANGE = 2.6;
+
+  // pixel position of the caret inside the textarea, via a hidden mirror
+  function caretPos(ta) {
+    if (!mirror) {
+      mirror = document.createElement("div");
+      mirror.setAttribute("aria-hidden", "true");
+      document.body.appendChild(mirror);
+    }
+    var cs = getComputedStyle(ta);
+    var padL = parseFloat(cs.paddingLeft) || 0;
+    var padR = parseFloat(cs.paddingRight) || 0;
+    var st = mirror.style;
+    st.position = "absolute";
+    st.top = "0";
+    st.left = "-9999px";
+    st.visibility = "hidden";
+    st.whiteSpace = "pre-wrap";
+    st.overflowWrap = "break-word";
+    st.wordWrap = "break-word";
+    st.boxSizing = "content-box";
+    st.padding = "0";
+    st.width = Math.max(1, ta.clientWidth - padL - padR) + "px";
+    st.fontFamily = cs.fontFamily;
+    st.fontSize = cs.fontSize;
+    st.fontWeight = cs.fontWeight;
+    st.fontStyle = cs.fontStyle;
+    st.lineHeight = cs.lineHeight;
+    st.letterSpacing = cs.letterSpacing;
+    st.textTransform = cs.textTransform;
+    mirror.textContent = ta.value.slice(0, ta.selectionEnd);
+    var marker = document.createElement("span");
+    marker.textContent = "​";
+    mirror.appendChild(marker);
+    return { x: marker.offsetLeft, y: marker.offsetTop, w: parseFloat(st.width), h: mirror.offsetHeight };
+  }
+
+  function targetEyes() {
+    var focused = document.activeElement === input;
+    if (!input.value) {
+      eyeTX = 0;
+      eyeTY = focused ? 1.4 : 0.5; // glance down at the box when focused
+      return;
+    }
+    var c = caretPos(input);
+    var fx = Math.min(1, Math.max(0, c.x / Math.max(1, c.w)));
+    var fy = Math.min(1, Math.max(0, (c.y - input.scrollTop) / Math.max(1, input.clientHeight)));
+    eyeTX = (fx - 0.5) * 2 * EYE_MX;
+    eyeTY = EYE_MY_BASE + fy * EYE_MY_RANGE;
+  }
+
+  function eyeFrame() {
+    eyeX += (eyeTX - eyeX) * 0.22;
+    eyeY += (eyeTY - eyeY) * 0.22;
+    for (var i = 0; i < eyeGs.length; i++) {
+      eyeGs[i].setAttribute("transform", "translate(" + eyeX.toFixed(2) + " " + eyeY.toFixed(2) + ")");
+    }
+    if (Math.abs(eyeTX - eyeX) > 0.03 || Math.abs(eyeTY - eyeY) > 0.03 || eyeHold > 0) {
+      eyeHold -= 1;
+      eyeRAF = requestAnimationFrame(eyeFrame);
+    } else {
+      eyeRAF = 0;
+    }
+  }
+
+  function kickEyes() {
+    targetEyes();
+    eyeHold = 6;
+    if (!eyeRAF) eyeRAF = requestAnimationFrame(eyeFrame);
+  }
+
+  if (eyeGs.length && !eyeReduced) {
+    ["input", "keyup", "click", "focus", "blur", "scroll"].forEach(function (ev) {
+      input.addEventListener(ev, kickEyes);
+    });
+    kickEyes();
+  }
+
   input.addEventListener("input", autogrow);
   input.addEventListener("keydown", function (e) {
     if (e.key === "Enter" && !e.shiftKey) {
