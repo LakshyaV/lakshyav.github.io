@@ -515,7 +515,8 @@ a.hl:hover { background: linear-gradient(to top, var(--mark, var(--accent-soft))
 }
 .peek svg { width: 100%; height: auto; display: block; overflow: visible; }
 .peek-back { z-index: 1; } /* behind the card */
-.peek-front { z-index: 3; filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.14)); } /* paws cast a small shadow on the card */
+.peek-front { z-index: 3; filter: drop-shadow(0 3px 2.5px rgba(0, 0, 0, 0.24)); } /* paws in front cast a shadow onto the card */
+.peek-castshadow { fill: #000000; opacity: 0.24; } /* card edge shadow on the body behind it */
 .peek-body { fill: url(#peekBody); stroke: #c3c2b8; stroke-width: 1.1; stroke-linejoin: round; }
 .peek-hand { fill: url(#peekHand); stroke: #bcbbb0; stroke-width: 1.1; }
 .peek-spec { fill: #ffffff; opacity: 0.6; }
@@ -555,7 +556,7 @@ a.hl:hover { background: linear-gradient(to top, var(--mark, var(--accent-soft))
 .compose-input {
   display: block;
   width: 100%;
-  min-height: 3rem;
+  min-height: 1.5rem;
   resize: none;
   border: none;
   outline: none;
@@ -573,8 +574,8 @@ a.hl:hover { background: linear-gradient(to top, var(--mark, var(--accent-soft))
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  margin-top: 0.9rem;
-  padding-top: 0.8rem;
+  margin-top: 0.55rem;
+  padding-top: 0.7rem;
   border-top: 1px solid var(--rule);
 }
 .compose-hint { font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.03em; color: var(--ink-faint); white-space: nowrap; }
@@ -629,14 +630,19 @@ a.hl:hover { background: linear-gradient(to top, var(--mark, var(--accent-soft))
   transition: transform 0.25s var(--spring);
 }
 .chip:hover { transform: scale(1.2); }
-.chip.active { border-color: var(--paper); outline: 1.5px solid var(--ink); }
+.chip.active {
+  transform: scale(1.4);
+  border-color: var(--paper);
+  box-shadow: 0 0 0 2px var(--paper), 0 0 0 3.5px var(--ink), 0 2px 6px rgba(0, 0, 0, 0.28);
+}
+.chip.active:hover { transform: scale(1.5); }
 
 /* --------------------------------- footer -------------------------------- */
 
 .footer {
   max-width: 46rem;
   margin: 0 auto;
-  padding: 2rem 1.5rem 6rem;
+  padding: 2rem 1.5rem 1.75rem;
   display: flex;
   justify-content: space-between;
   gap: 1rem;

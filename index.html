@@ -241,7 +241,7 @@
         </div>
       </div>
       <p class="gh-footnote">
-        live from <a class="hl hl-green" href="https://github.com/LakshyaV" target="_blank" rel="noopener noreferrer">github.com/LakshyaV</a>, greener with every push
+        live from <a class="hl hl-green" href="https://github.com/LakshyaV" target="_blank" rel="noopener noreferrer">github.com/LakshyaV</a>
       </p>
     </section>
 
@@ -257,7 +257,7 @@
     <!-- ------------------------------ contact ---------------------------- -->
     <section class="block contact" id="contact">
       <p class="block-label">say something</p>
-      <p class="lead">i'm listening. that's sort of the whole point.</p>
+      <p class="lead">if you're cracked, have a question, or want to help, reach out</p>
       <div class="contact-row">
         <a class="button" href="mailto:lakyvasu22@gmail.com">email me</a>
         <a class="hl hl-yellow" href="https://github.com/LakshyaV" target="_blank" rel="noopener noreferrer">github</a>
@@ -278,6 +278,14 @@
                 <stop offset="0%" stop-color="#f6f5ef" />
                 <stop offset="100%" stop-color="#c7c6bb" />
               </radialGradient>
+              <filter id="peekBlur" x="-40%" y="-40%" width="180%" height="180%">
+                <feGaussianBlur stdDeviation="3.2" />
+              </filter>
+              <clipPath id="peekClip">
+                <ellipse cx="45" cy="40" rx="30" ry="32" />
+                <circle cx="30" cy="14" r="7.5" />
+                <circle cx="60" cy="14" r="7.5" />
+              </clipPath>
             </defs>
             <circle class="peek-body" cx="30" cy="14" r="7.5" />
             <circle class="peek-body" cx="60" cy="14" r="7.5" />
@@ -294,6 +302,10 @@
               <circle class="peek-glint" cx="54.7" cy="39" r="1.5" />
             </g>
             <path class="peek-mouth" d="M40 51 Q45 56 50 51" />
+            <!-- shadow the card edge casts up onto the body (it's behind the card) -->
+            <g clip-path="url(#peekClip)">
+              <ellipse class="peek-castshadow" cx="45" cy="66" rx="34" ry="12" filter="url(#peekBlur)" />
+            </g>
           </svg>
         </span>
 
@@ -302,7 +314,7 @@
             <span class="compose-label">compose</span>
             <span class="compose-to">to lakyvasu22@gmail.com</span>
           </div>
-          <textarea id="mail-input" class="compose-input" rows="2"
+          <textarea id="mail-input" class="compose-input" rows="1"
             placeholder="write something…" spellcheck="false"></textarea>
           <div class="compose-foot">
             <span class="compose-hint" id="mail-hint">⏎ to send &nbsp;·&nbsp; ⇧⏎ for a new line</span>
