@@ -623,7 +623,9 @@
     tryBtn.textContent = "✋ type with your hand gestures";
     var sub = document.createElement("span");
     sub.className = "hand-cta-sub";
-    sub.textContent = "just for fun";
+    // needs a webcam + both hands free — call that out on touch devices
+    var coarse = window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
+    sub.textContent = coarse ? "best on a laptop 💻" : "just for fun";
     var x = document.createElement("button");
     x.type = "button";
     x.className = "hand-cta-x";
