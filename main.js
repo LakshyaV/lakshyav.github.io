@@ -609,3 +609,73 @@
     requestAnimationFrame(frame);
   }
 })();
+
+/* ------------------------------ email terminal ---------------------------
+   A tiny shell that composes a real message. There is no server here, so
+   "send" hands the typed text to the visitor's own mail client, pre-addressed
+   to the inbox — which genuinely delivers it. Enter sends, Shift+Enter adds a
+   line, and the box grows with the text. */
+(function () {
+  "use strict";
+  var form = document.getElementById("mailterm");
+  if (!form) return;
+  var input = document.getElementById("mail-input");
+  var hint = document.getElementById("mail-hint");
+  var send = document.getElementById("mail-send");
+  var TO = "lakyvasu22@gmail.com";
+  var hintDefault = hint ? hint.textContent : "";
+  var hintTimer = 0;
+
+  function autogrow() {
+    input.style.height = "auto";
+    input.style.height = Math.min(input.scrollHeight, 220) + "px";
+  }
+
+  function flashHint(text, sent) {
+    if (!hint) return;
+    hint.textContent = text;
+    hint.classList.toggle("sent", !!sent);
+    clearTimeout(hintTimer);
+    hintTimer = setTimeout(function () {
+      hint.textContent = hintDefault;
+      hint.classList.remove("sent");
+    }, 4000);
+  }
+
+  function submit() {
+    var body = input.value.trim();
+    if (!body) {
+      form.classList.remove("shake");
+      // reflow so the animation can retrigger
+      void form.offsetWidth;
+      form.classList.add("shake");
+      input.focus();
+      return;
+    }
+    // first line doubles as the subject when it's short; else a friendly default
+    var firstLine = body.split("\n")[0];
+    var subject = firstLine.length <= 60 ? firstLine : "hello from your site";
+    var href =
+      "mailto:" + TO +
+      "?subject=" + encodeURIComponent(subject) +
+      "&body=" + encodeURIComponent(body);
+    flashHint("opening your mail app…", true);
+    window.location.href = href;
+  }
+
+  input.addEventListener("input", autogrow);
+  input.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      submit();
+    }
+  });
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    submit();
+  });
+  form.addEventListener("animationend", function () {
+    form.classList.remove("shake");
+  });
+  autogrow();
+})();
