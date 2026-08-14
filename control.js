@@ -239,10 +239,10 @@
     // the instant it moves — no displacement threshold, no "hold it at the edge
     // to build speed". Releasing with speed flings, then it glides to a stop.
     SCROLL_GRACE_MS: 90, // ignore the finger's settle drift right after a pinch
-    DRAG_GAIN: 4.6, // page px scrolled per screen px the fingertip moves
+    DRAG_GAIN: 7.5, // page px scrolled per screen px the fingertip moves
     CLICK_MOVE_TOL: 12, // total fingertip travel under which a pinch stays a click
-    MOMENTUM_SEED: 0.9, // fraction of the last drag speed carried into the fling
-    FRICTION: 0.93, // per-frame momentum decay after release (higher = glides longer)
+    MOMENTUM_SEED: 1.0, // fraction of the last drag speed carried into the fling
+    FRICTION: 0.95, // per-frame momentum decay after release (higher = glides longer)
     FLING_MIN: 1.5, // min drag speed (px/frame) that starts a fling
     CLICK_DEBOUNCE_MS: 300,
   };
