@@ -416,10 +416,7 @@ a.hl:hover { background: linear-gradient(to top, var(--mark, var(--accent-soft))
   font-family: var(--font-mono);
   font-size: 0.72rem;
   letter-spacing: 0.04em;
-  color: var(--accent);
-  padding: 0.3rem 0.7rem;
-  border-radius: 999px;
-  background: var(--accent-soft);
+  color: var(--ink-faint);
   white-space: nowrap;
 }
 

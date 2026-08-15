@@ -201,7 +201,7 @@
           "<b>" + monthTotal + "</b> contribution" + (monthTotal === 1 ? "" : "s") + " this month";
       }
       if (streakEl && streak > 1) {
-        streakEl.textContent = "🔥 " + streak + "-day streak";
+        streakEl.textContent = streak + "-day streak";
         streakEl.hidden = false;
       }
       if (statsEl) {
